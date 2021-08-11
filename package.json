@@ -2,20 +2,26 @@
   "name": "bot-army",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
+    "electron": "^13.1.9",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-scripts": "4.0.3",
+    "styled-components": "^5.3.0",
     "web-vitals": "^1.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "export BROWSER=none && react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "productName": "The FREEMOON Faucet Bot Army",
+    "main": "electron/main.js",
+    "start-electron": "export ELECTRON_START_URL=http://localhost:3000 && electron ./electron/main.js"
   },
   "eslintConfig": {
     "extends": [
