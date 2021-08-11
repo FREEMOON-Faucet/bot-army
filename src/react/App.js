@@ -1,4 +1,5 @@
 import { channels } from "../shared/constants"
+import { useState } from "react"
 import styled from "styled-components"
 import GlobalStyle from "./globalStyle"
 
@@ -16,6 +17,16 @@ const { ipcRenderer } = window
 
 
 function App() {
+  
+  ipcRenderer.on(channels.MNEMONIC, (event, arg) => {
+    ipcRenderer.removeAllListeners(channels.MNEMONIC)
+    const result = arg
+    console.log(result)
+  })
+
+  ipcRenderer.send(channels.MNEMONIC)
+
+
   return (
     <Container>
       <GlobalStyle/>

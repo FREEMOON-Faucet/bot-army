@@ -15,7 +15,9 @@ function createWindow() {
     width: 1000,
     height: 725,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js")
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: true,
+      contextIsolation: false
     }
   })
   mainWindow.loadURL(startUrl)
@@ -38,9 +40,6 @@ app.on("activate", function() {
   }
 })
 
-ipcMain.on(channels.APP_INFO, (event) => {
-  event.sender.send(channels.APP_INFO, {
-    appName: app.getName(),
-    appVersion: app.getVersion(),
-  })
+ipcMain.on(channels.MNEMONIC, (event, args) => {
+  event.sender.send(channels.MNEMONIC, "received")
 })
