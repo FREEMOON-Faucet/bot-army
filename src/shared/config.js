@@ -1,11 +1,16 @@
 module.exports = {
   mainnet: {
-    address: "",
+    faucet: "",
+    free: "",
+    fmn: "",
     provider: "https://mainway.freemoon.xyz/gate"
   },
   testnet: {
-    address: "",
+    faucet: "",
+    free: "",
+    fmn: "",
     provider: "https://testway.freemoon.xyz/gate"
   },
-  abi: []
+  abi: [],
+  erc20Abi: []
 }

@@ -1,11 +1,15 @@
 import { channels } from "../shared/constants"
 import { useState, useEffect } from "react"
 import styled from "styled-components"
+import Web3 from "web3"
 import GlobalStyle from "./globalStyle"
+import Config from "../shared/config"
 
 import fmn from "../icons/android-chrome-512x512.png"
 import WalletSettings from "./pages/WalletSettings"
 import Monitor from "./pages/Monitor"
+
+const PROVIDER = Config.mainnet.provider
 
 
 const Container = styled.div`
@@ -46,36 +50,43 @@ const { ipcRenderer } = window
 
 function App() {
 
-  const [ mnemonic, setMnemonic ] = useState([])
-  const [ derivations, setDerivations ] = useState([])
-
   const [ tab, setTab ] = useState(0)
+  const [ wallet, setWallet ] = useState(false)
+  const [ web3, setWeb3 ] = useState(null)
 
   useEffect(() => {
-    if(mnemonic.length && derivations.length) setTab(1)
+    setWeb3(new Web3(PROVIDER))
+  }, [])
+
+  useEffect(() => {
+    if(wallet) setTab(1)
     else setTab(0)
-  }, [ mnemonic, derivations ])
+  }, [ wallet ])
   
-  // ipcRenderer.on(channels.MNEMONIC, (event, arg) => {
-  //   ipcRenderer.removeAllListeners(channels.MNEMONIC)
-  //   const result = arg
-  //   console.log(result)
-  // })
+  ipcRenderer.on(channels.INITIAL_DISPLAY, (event, arg) => {
+    ipcRenderer.removeAllListeners(channels.MNEMONIC)
+    const result = arg
+    console.log(result)
+  })
 
   // ipcRenderer.send(channels.MNEMONIC)
+
+
+  const generateWallet = async (count, phrase) => {
+    web3.eth.accounts.wallet.create(count, phrase)
+    web3.eth.accounts.wallet.save("test#!$")
+    setWallet(true)
+  }
 
 
   const displayTab = () => {
     if(tab === 0) {
       return (
-        <WalletSettings setWalletSettings={settings => {
-          setMnemonic(settings.formattedPhrase)
-          setDerivations(settings.formattedCount)
-        }}/>
+        <WalletSettings generateWallet={ generateWallet }/>
       )
     } else if(tab === 1) {
       return (
-        <Monitor/>
+        <Monitor web3/>
       )
     }
   }

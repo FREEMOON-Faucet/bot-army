@@ -13,6 +13,7 @@ const Heading = styled.div`
   width: 80%;
   max-width: 600px;
   height: 25px;
+  margin-top: 20px;
   font-size: 1.2rem;
   font-weight: bold;
   text-align: center;
@@ -23,7 +24,6 @@ const ContentContainer = styled.div`
   justify-content: center;
   flex-wrap: wrap;
   width: 80%;
-  margin-bottom: 20px;
   max-width: 600px;
 `
 
@@ -73,7 +73,7 @@ const Confirm = styled.div`
 `
 
 
-export default function WalletSettings({ setWalletSettings }) {
+export default function WalletSettings({ generateWallet }) {
 
   const words = useRef([])
   const count = useRef(0)
@@ -90,10 +90,10 @@ export default function WalletSettings({ setWalletSettings }) {
 
 
   const sendWalletSettings = () => {
-    const formattedPhrase = words.current.join().replaceAll(" ", "").replaceAll(",", " ")
     const formattedCount = String(count.current)
+    const formattedPhrase = words.current.join().replaceAll(" ", "").replaceAll(",", " ")
 
-    setWalletSettings({formattedPhrase, formattedCount})
+    generateWallet(formattedCount, formattedPhrase)
   }
 
 
