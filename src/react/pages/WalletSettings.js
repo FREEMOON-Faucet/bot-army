@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import styled from "styled-components"
-import fmn from "../../icons/android-chrome-512x512.png"
 
 
 const WalletSettingsContainer = styled.div`
@@ -8,32 +7,6 @@ const WalletSettingsContainer = styled.div`
   flex-direction: column;
   align-items: center;
   width: 100%;
-`
-
-const Brand = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  margin-top: 10px;
-`
-
-const Icon = styled.img`
-  width: 50%;
-  max-width: 80px;
-`
-
-const Title = styled.div`
-  margin-top: 10px;
-  font-size: 2rem;
-  text-align: center;
-`
-
-const Subtitle = styled.div`
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-  font-style: italic;
-  text-align: center;
 `
 
 const Heading = styled.div`
@@ -100,49 +73,53 @@ const Confirm = styled.div`
 `
 
 
-export default function WalletSettings({ setMnemonic, setDerivations }) {
+export default function WalletSettings({ setWalletSettings }) {
 
-  const seedPhrase = () => {
-    const words = []
-    
+  const words = useRef([])
+  const count = useRef(0)
+
+  const displayPhraseInputs = () => {
+    let phraseInputs = []
     for(let i = 0; i < 12; i++) {
-      words.push(<Mnemonic key={i} placeholder={i + 1} spellCheck={false}/>)
+      phraseInputs.push(
+        <Mnemonic ref={words[i]} key={i} placeholder={i + 1} spellCheck={false} onChange={e => words.current[i] = e.target.value}/>
+      )
     }
+    return phraseInputs
+  }
 
-    return words
+
+  const sendWalletSettings = () => {
+    const formattedPhrase = words.current.join().replaceAll(" ", "").replaceAll(",", " ")
+    const formattedCount = String(count.current)
+
+    setWalletSettings({formattedPhrase, formattedCount})
   }
 
 
   return (
     <WalletSettingsContainer>
-      <Brand>
-        <Icon src={fmn}/>
-        <Title>
-          The FREEMOON Faucet
-        </Title>
-        <Subtitle>
-          Bot Army
-        </Subtitle>
-      </Brand>
       <Heading>
         Bot Army Seed Phrase
       </Heading>
       <ContentContainer>
-        {seedPhrase()}
+        {displayPhraseInputs()}
       </ContentContainer>
       <Heading>
         Number of Bots
       </Heading>
       <ContentContainer>
-        <Derivations type="number" min="1" placeholder="Min 1"/>
+        <Derivations type="number" min="1" placeholder="Min 1" onChange={e => count.current = e.target.value}/>
       </ContentContainer>
       <ContentContainer>
         <Confirm onClick={() => {
-          setMnemonic()
-          setDerivations()
+          if(words.current.length === 12 && count.current >= 1) {
+            sendWalletSettings()
+          }
         }}>
           Start
         </Confirm>
       </ContentContainer>
-    </WalletSettingsContainer>)
+    </WalletSettingsContainer>
+  )
 }

@@ -40,6 +40,6 @@ app.on("activate", function() {
   }
 })
 
-ipcMain.on(channels.MNEMONIC, (event, args) => {
-  event.sender.send(channels.MNEMONIC, "received")
-})
+// ipcMain.on(channels.MNEMONIC, (event, args) => {
+//   event.sender.send(channels.MNEMONIC, "received")
+// })
