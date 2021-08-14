@@ -1,7 +1,25 @@
 import { useEffect, useState } from "react"
-import { channels } from "../shared/constants"
 import styled from "styled-components"
 import BigNumber from "bignumber.js"
+import { ethers } from "ethers"
+
+import Config from "../../shared/config"
+
+const { ipcRenderer } = window
+
+const FAUCET_ABI = Config.abi
+const ERC20_ABI = Config.erc20Abi
+
+const FAUCET_ADDR =Config.mainnet.faucet
+const FREE_ADDR = Config.mainnet.free
+const FMN_ADDR = Config.mainnet.fmn
+
+const PROVIDER = Config.mainnet.provider
+
+const WAIT_TIME = 1000 * (3600 + 60)  // 61 minutes, to milliseconds
+
+let claimInterval
+
 
 const MonitorContainer = styled.div`
   display: flex;
@@ -46,7 +64,7 @@ const Value = styled.div`
   font-weight: ${props => props.symbol ? "900" : "300"};
 `
 
-export default function Monitor({ web3 }) {
+export default function Monitor({ phrase }) {
 
   const ZERO = new BigNumber("0")
 
@@ -56,12 +74,27 @@ export default function Monitor({ web3 }) {
     fmn: ZERO
   })
 
+
   useEffect(() => {
-    const getBalances = async () => {
-      const [ acc ] = await web3.eth.accounts.wallet.load("test#!$")
-      const fsnBal = web3.utils.fromWei(await web3.eth.getBalance(acc))
+    const connect = async () => {
+      const provider = new ethers.providers.JsonRpcProvider(PROVIDER)
+      const base = ethers.Wallet.fromMnemonic(phrase)
+      const signer = base.connect(provider)
+
+      const faucet = new ethers.Contract(FAUCET_ADDR, FAUCET_ABI, signer)
+      const free = new ethers.Contract(FREE_ADDR, ERC20_ABI, provider)
+      const fmn = new ethers.Contract(FMN_ADDR, ERC20_ABI, provider)
+
+
+      const fsnBal = await provider.getBalance(base.address)
+      const freeBal = await free.balanceOf(base.address)
+      const fmnBal = await fmn.balanceOf(base.address)
+
+      console.log(fsnBal, freeBal, fmnBal)
     }
-  })
+    connect()
+  }, [ phrase ])
+
 
   return (
     <MonitorContainer>
@@ -74,7 +107,7 @@ export default function Monitor({ web3 }) {
             FSN
           </Value>
           <Value>
-            12
+            {balances.fsn.toString()}
           </Value>
         </Row>
         <Row>
@@ -82,7 +115,7 @@ export default function Monitor({ web3 }) {
             FREE
           </Value>
           <Value>
-            23
+            {balances.free.toString()}
           </Value>
         </Row>
         <Row>
@@ -90,7 +123,7 @@ export default function Monitor({ web3 }) {
             FMN
           </Value>
           <Value>
-            34
+            {balances.fmn.toString()}
           </Value>
         </Row>
       </Balances>

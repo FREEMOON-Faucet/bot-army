@@ -9,6 +9,8 @@ import fmn from "../icons/android-chrome-512x512.png"
 import WalletSettings from "./pages/WalletSettings"
 import Monitor from "./pages/Monitor"
 
+const { ipcRenderer } = window
+
 const PROVIDER = Config.mainnet.provider
 
 
@@ -45,37 +47,20 @@ const Subtitle = styled.div`
   text-align: center;
 `
 
-const { ipcRenderer } = window
-
 
 function App() {
 
   const [ tab, setTab ] = useState(0)
-  const [ wallet, setWallet ] = useState(false)
-  const [ web3, setWeb3 ] = useState(null)
+  const [ phrase, setPhrase ] = useState("")
 
   useEffect(() => {
-    setWeb3(new Web3(PROVIDER))
-  }, [])
-
-  useEffect(() => {
-    if(wallet) setTab(1)
+    if(phrase) setTab(1)
     else setTab(0)
-  }, [ wallet ])
-  
-  ipcRenderer.on(channels.INITIAL_DISPLAY, (event, arg) => {
-    ipcRenderer.removeAllListeners(channels.MNEMONIC)
-    const result = arg
-    console.log(result)
-  })
-
-  // ipcRenderer.send(channels.MNEMONIC)
+  }, [ phrase ])
 
 
-  const generateWallet = async (count, phrase) => {
-    web3.eth.accounts.wallet.create(count, phrase)
-    web3.eth.accounts.wallet.save("test#!$")
-    setWallet(true)
+  const generateWallet = async (count, seedPhrase) => {
+    setPhrase(seedPhrase)
   }
 
 
@@ -86,7 +71,7 @@ function App() {
       )
     } else if(tab === 1) {
       return (
-        <Monitor web3/>
+        <Monitor phrase={ phrase }/>
       )
     }
   }
@@ -96,7 +81,7 @@ function App() {
     <Container>
       <GlobalStyle/>
       <Brand>
-        <Icon src={fmn}/>
+        <Icon src={ fmn }/>
         <Title>
           The FREEMOON Faucet
         </Title>
@@ -104,7 +89,7 @@ function App() {
           Bot Army
         </Subtitle>
       </Brand>
-      {displayTab()}
+      { displayTab() }
     </Container>
   )
 }

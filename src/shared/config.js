@@ -1,4 +1,4 @@
-module.exports = {
+const Config = {
   mainnet: {
     faucet: "",
     free: "",
@@ -14,3 +14,5 @@ module.exports = {
   abi: [],
   erc20Abi: []
 }
+
+export default Config

@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require("electron")
 const { channels } = require("../src/shared/constants")
 const path = require("path")
 const url = require("url")
+const { connect } = require("./bot")
 
 let mainWindow
 
@@ -39,7 +40,3 @@ app.on("activate", function() {
     createWindow()
   }
 })
-
-// ipcMain.on(channels.MNEMONIC, (event, args) => {
-//   event.sender.send(channels.MNEMONIC, "received")
-// })

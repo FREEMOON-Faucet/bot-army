@@ -1,6 +1,6 @@
 
-import Web3 from "web3"
-import Config from "../src/shared/config"
+const { ethers } = require("ethers")
+const Config = require("../src/shared/config")
 
 const FAUCET_ABI = Config.abi
 const ERC20_ABI = Config.erc20Abi
@@ -16,14 +16,16 @@ const WAIT_TIME = 1000 * (3600 + 60)  // 61 minutes, to milliseconds
 let claimInterval
 
 
-const getWeb3 = () => {
-  const web3 = new Web3(PROVIDER)
+const connect = phrase => {
+  const provider = new ethers.providers.JsonRpcProvider(PROVIDER)
+  ethers.Wallet.fromMnemonic(phrase)
+  const signer = provider.getSigner()
 
-  const faucet = new web3.eth.Contract(FAUCET_ABI, FAUCET_ADDR)
-  const free = new web3.eth.Contract(ERC20_ABI, FREE_ADDR)
-  const fmn = new web3.eth.Contract(ERC20_ABI, FMN_ADDR)
+  const faucet = new ethers.Contract(FAUCET_ADDR, FAUCET_ABI)
+  const free = new ethers.Contract(FREE_ADDR, ERC20_ABI)
+  const fmn = new ethers.Contract(FMN_ADDR, ERC20_ABI)
   
-  return { web3, faucet, free, fmn }
+  return { ethers, faucet, free, fmn, signer }
 }
 
 
@@ -39,7 +41,7 @@ const getAccounts = async accounts => {
 
 
 const getTokenBalances = async acc => {
-  const { web3, free, fmn } = getWeb3()
+  const { web3, free, fmn } = connect()
   const freeBal = web3.utils.fromWei(await free.methods.balanceOf(acc).call())
   const fmnBal = web3.utils.fromWei(await fmn.methods.balanceOf(acc).call())
 
@@ -48,7 +50,7 @@ const getTokenBalances = async acc => {
 
 
 const claimAll = async accounts => {
-  const { faucet } = getWeb3()
+  const { faucet } = connect()
   const base = accounts[0]
   
   for(let i = 0; i < accounts.length; i++) {
@@ -68,7 +70,7 @@ const claimAll = async accounts => {
 
 
 const subscribeAll = async accounts => {
-  const { web3, faucet } = getWeb3()
+  const { web3, faucet } = connect()
   const base = accounts[0]
 
   for(let i = 0; i < accounts.length; i++) {
@@ -94,4 +96,9 @@ const startClaiming = async accounts => {
 
 const stopClaiming = async accounts => {
   clearInterval(claimInterval)
+}
+
+
+module.exports = {
+  connect
 }
