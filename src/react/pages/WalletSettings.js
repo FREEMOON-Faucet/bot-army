@@ -25,6 +25,7 @@ const ContentContainer = styled.div`
   flex-wrap: wrap;
   width: 80%;
   max-width: 600px;
+  margin: 10px 0;
 `
 
 const Mnemonic = styled.textarea`
@@ -41,21 +42,6 @@ const Mnemonic = styled.textarea`
   line-height: 30px;
 `
 
-const Derivations = styled.input`
-  resize: none;
-  width: 100%;
-  max-width: 495px;
-  height: 40px;
-  margin: 5px;
-  padding: 5px;
-  border: 1px solid black;
-  border-radius: 2px;
-  outline: none;
-  font-size: 1.5rem;
-  text-align: center;
-  line-height: 30px;
-`
-
 const Confirm = styled.div`
   display: flex;
   justify-content: center;
@@ -65,18 +51,18 @@ const Confirm = styled.div`
   height: 100px;
   margin: 5px;
   padding: 5px;
-  border: 2px solid black;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 2rem;
   cursor: pointer;
-  background: rgba(146, 180, 227, 0.6);
+  background: rgb(146, 180, 227);
+  box-shadow: 0px 4px 12px #ccc;
 `
 
 
 export default function WalletSettings({ generateWallet }) {
 
   const words = useRef([])
-  const count = useRef(0)
+
 
   const displayPhraseInputs = () => {
     let phraseInputs = []
@@ -90,10 +76,9 @@ export default function WalletSettings({ generateWallet }) {
 
 
   const sendWalletSettings = () => {
-    const formattedCount = String(count.current)
     const formattedPhrase = words.current.join().replaceAll(" ", "").replaceAll(",", " ")
 
-    generateWallet(formattedCount, formattedPhrase)
+    generateWallet(formattedPhrase)
   }
 
 
@@ -105,18 +90,8 @@ export default function WalletSettings({ generateWallet }) {
       <ContentContainer>
         {displayPhraseInputs()}
       </ContentContainer>
-      <Heading>
-        Number of Bots
-      </Heading>
       <ContentContainer>
-        <Derivations type="number" min="1" placeholder="Min 1" onChange={e => count.current = e.target.value}/>
-      </ContentContainer>
-      <ContentContainer>
-        <Confirm onClick={() => {
-          if(words.current.length === 12 && count.current >= 1) {
-            sendWalletSettings()
-          }
-        }}>
+        <Confirm onClick={() => words.current.length === 12 ? sendWalletSettings() : ""}>
           Start
         </Confirm>
       </ContentContainer>

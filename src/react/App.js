@@ -1,17 +1,14 @@
-import { channels } from "../shared/constants"
 import { useState, useEffect } from "react"
 import styled from "styled-components"
-import Web3 from "web3"
 import GlobalStyle from "./globalStyle"
-import Config from "../shared/config"
 
 import fmn from "../icons/android-chrome-512x512.png"
 import WalletSettings from "./pages/WalletSettings"
 import Monitor from "./pages/Monitor"
 
-const { ipcRenderer } = window
+import Config from "../shared/config.mjs"
 
-const PROVIDER = Config.mainnet.provider
+const PROVIDER = Config.testnet.provider
 
 
 const Container = styled.div`
@@ -51,16 +48,20 @@ const Subtitle = styled.div`
 function App() {
 
   const [ tab, setTab ] = useState(0)
-  const [ phrase, setPhrase ] = useState("")
+  const [ connection, setConnection ] = useState(null)
+
 
   useEffect(() => {
-    if(phrase) setTab(1)
+    if(connection) setTab(1)
     else setTab(0)
-  }, [ phrase ])
+  }, [ connection ])
 
 
-  const generateWallet = async (count, seedPhrase) => {
-    setPhrase(seedPhrase)
+  const generateWallet = async seedPhrase => {
+    setConnection({
+      provider: PROVIDER,
+      phrase: seedPhrase
+    })
   }
 
 
@@ -71,7 +72,7 @@ function App() {
       )
     } else if(tab === 1) {
       return (
-        <Monitor phrase={ phrase }/>
+        <Monitor connection={ connection }/>
       )
     }
   }
