@@ -1,8 +1,6 @@
-const { app, BrowserWindow, ipcMain } = require("electron")
-const { channels } = require("../src/shared/constants")
+const { app, BrowserWindow } = require("electron")
 const path = require("path")
 const url = require("url")
-const { connect } = require("./bot")
 
 let mainWindow
 
@@ -13,13 +11,10 @@ function createWindow() {
     slashes: true
   })
   mainWindow = new BrowserWindow({
-    width: 1000,
-    height: 725,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-      nodeIntegration: true,
-      contextIsolation: false
-    }
+    title: "FREEMOON",
+    icon: path.join(__dirname, "./icon.png"),
+    width: 650,
+    height: 725
   })
   mainWindow.loadURL(startUrl)
   mainWindow.on("closed", function() {

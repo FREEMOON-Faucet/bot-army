@@ -2,11 +2,12 @@ import { useState, useEffect } from "react"
 import styled from "styled-components"
 import GlobalStyle from "./globalStyle"
 
-import fmn from "../icons/android-chrome-512x512.png"
+import fmn from "./icons/android-chrome-512x512.png"
 import WalletSettings from "./pages/WalletSettings"
+import Gas from "./pages/Gas"
 import Monitor from "./pages/Monitor"
 
-import Config from "../shared/config.mjs"
+import Config from "./config.mjs"
 
 const PROVIDER = Config.testnet.provider
 
@@ -49,18 +50,38 @@ function App() {
 
   const [ tab, setTab ] = useState(0)
   const [ connection, setConnection ] = useState(null)
+  const [ config, setConfig ] = useState(null)
 
 
   useEffect(() => {
-    if(connection) setTab(1)
-    else setTab(0)
+    if(connection) console.log(`Connection set: ${connection.provider}, ${connection.phrase}`)
   }, [ connection ])
+
+
+  useEffect(() => {
+    if(config) console.log(`Config set: ${config.count}, ${config.gasPrice}`)
+  }, [ config ])
+
+
+  useEffect(() => {
+    if(connection && !config) setTab(1)
+    else if(connection && config) setTab(2) 
+    else setTab(0)
+  }, [ connection, config ])
 
 
   const generateWallet = async seedPhrase => {
     setConnection({
       provider: PROVIDER,
       phrase: seedPhrase
+    })
+  }
+
+
+  const countAndGas = async options => {
+    setConfig({
+      count: options.count,
+      gasPrice: options.gasPrice
     })
   }
 
@@ -72,7 +93,11 @@ function App() {
       )
     } else if(tab === 1) {
       return (
-        <Monitor connection={ connection }/>
+        <Gas connection={ connection } countAndGas={ countAndGas }/>
+      )
+    } else if(tab === 2) {
+      return (
+        <Monitor connection={ connection } config={ config }/>
       )
     }
   }

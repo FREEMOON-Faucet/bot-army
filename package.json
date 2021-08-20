@@ -1,14 +1,15 @@
 {
   "name": "bot-army",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "productName": "FREEMOON",
   "version": "0.1.0",
   "private": true,
-  "homepage": "./",
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
     "bignumber.js": "^9.0.1",
-    "electron": "^13.1.9",
     "ethers": "^5.4.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -23,9 +24,13 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "productName": "The FREEMOON Faucet Bot Army",
-    "main": "electron/main.js",
-    "start-electron": "export ELECTRON_START_URL=http://localhost:3000 && electron ./electron/main.js"
+    "start-win": "set BROWSER=none && react-scripts start",
+    "start-electron": "export ELECTRON_START_URL=http://localhost:3000 && electron .",
+    "start-electron-win": "set ELECTRON_START_URL=http://localhost:3000 && electron .",
+    "build-electron": "mkdir build/src && cp -r electron/. build/electron",
+    "build-electron-win": "mkdir build\\src && Xcopy /E /I /Y electron build\\electron",
+    "package": "npm run build && npm run build-electron && electron-builder build --win -c.extraMetadata.main=build/electron/main.js --publish never",
+    "package-win": "npm run build && npm run build-electron-win && electron-builder build -c.extraMetadata.main=build/electron/main.js --publish never"
   },
   "eslintConfig": {
     "extends": [
@@ -44,5 +49,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "electron": "^13.2.1",
+    "electron-builder": "^22.11.7"
   }
 }
