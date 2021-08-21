@@ -4,7 +4,7 @@ import GlobalStyle from "./globalStyle"
 
 import fmn from "./icons/android-chrome-512x512.png"
 import WalletSettings from "./pages/WalletSettings"
-import Gas from "./pages/Gas"
+import BotCount from "./pages/BotCount"
 import Monitor from "./pages/Monitor"
 
 import Config from "./config.mjs"
@@ -47,41 +47,22 @@ const Subtitle = styled.div`
 
 
 function App() {
-
   const [ tab, setTab ] = useState(0)
   const [ connection, setConnection ] = useState(null)
-  const [ config, setConfig ] = useState(null)
+  const [ count, setCount ] = useState(0)
 
 
   useEffect(() => {
-    if(connection) console.log(`Connection set: ${connection.provider}, ${connection.phrase}`)
-  }, [ connection ])
-
-
-  useEffect(() => {
-    if(config) console.log(`Config set: ${config.count}, ${config.gasPrice}`)
-  }, [ config ])
-
-
-  useEffect(() => {
-    if(connection && !config) setTab(1)
-    else if(connection && config) setTab(2) 
+    if(connection && !count) setTab(1)
+    else if(connection && count) setTab(2) 
     else setTab(0)
-  }, [ connection, config ])
+  }, [ connection, count ])
 
 
   const generateWallet = async seedPhrase => {
     setConnection({
       provider: PROVIDER,
       phrase: seedPhrase
-    })
-  }
-
-
-  const countAndGas = async options => {
-    setConfig({
-      count: options.count,
-      gasPrice: options.gasPrice
     })
   }
 
@@ -93,11 +74,11 @@ function App() {
       )
     } else if(tab === 1) {
       return (
-        <Gas connection={ connection } countAndGas={ countAndGas }/>
+        <BotCount setCount={ setCount }/>
       )
     } else if(tab === 2) {
       return (
-        <Monitor connection={ connection } config={ config }/>
+        <Monitor connection={ connection } count={ count }/>
       )
     }
   }

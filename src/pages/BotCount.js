@@ -49,26 +49,9 @@ const Action = styled.div`
   box-shadow: 0px 4px 12px #ccc;
 `
 
-export default function Gas({ connection, countAndGas }) {
+export default function BotCount({ setCount }) {
 
-  const ONE = new BigNumber("1")
-  const ONE_BILLION = new BigNumber("1000000000")
-
-  const [ confirmActive, setConfirmActive ] = useState(true)
-  const [ configValues, setConfigValues ] = useState({
-    count: ONE,
-    gasPrice: ONE
-  })
-
-
-  const sendConfig = () => {
-    const formattedConfig = {
-      count: configValues.count.toString(),
-      gasPrice: configValues.gasPrice.multipliedBy(ONE_BILLION).toString()
-    }
-
-    countAndGas(formattedConfig)
-  }
+  const [ countValue, setCountValue ] = useState(1)
 
 
   return (
@@ -76,12 +59,8 @@ export default function Gas({ connection, countAndGas }) {
       <Heading>
         Number of Bots
       </Heading>
-      <Input type="number" min="1" defaultValue={configValues.count} onChange={e => setConfigValues(prev => ({ ...prev, count: new BigNumber(e.target.value) }))}/>
-      <Heading>
-        Gas Price (gwei)
-      </Heading>
-      <Input type="number" min="1" defaultValue={configValues.gasPrice} onChange={e => setConfigValues(prev => ({ ...prev, gasPrice: new BigNumber(e.target.value) }))}/>
-      <Action onClick={() => sendConfig()}>
+      <Input type="number" min="1" defaultValue={ countValue } onChange={ e => setCountValue(e.target.value) }/>
+      <Action onClick={ () => setCount(countValue) }>
         Confirm
       </Action> 
     </GasContainer>

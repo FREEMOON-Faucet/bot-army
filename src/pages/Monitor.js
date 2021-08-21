@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useReducer } from "react"
 import styled from "styled-components"
 import { ethers } from "ethers"
 import { FaStop, FaPlay } from "react-icons/fa"
+import BigNumber from "bignumber.js"
 
 import Config from "../config.mjs"
 
@@ -127,9 +128,24 @@ const Footer = styled.div`
   height: 50px;
 `
 
+const Input = styled.input`
+  width: 100%;
+  max-width: 495px;
+  height: 50px;
+  margin: 5px 0;
+  padding: 0;
+  border: 1px solid black;
+  border-radius: 4px;
+  outline: none;
+  font-size: 1.5rem;
+  text-align: center;
+  line-height: 30px;
+`
 
-export default function Monitor({ connection, config }) {
 
+export default function Monitor({ connection, count }) {
+
+  const WAIT_MESSAGE = "Please Wait ..."
   const WAIT_TIME = 1000 * (3600 + 60)  // 61 minutes, to milliseconds
   // const WAIT_TIME = 20000
   const CLAIMS_PER_BLOCK = 6 * 13
@@ -140,6 +156,9 @@ export default function Monitor({ connection, config }) {
   const FAUCET_ADDR =Config.testnet.faucet
   const FREE_ADDR = Config.testnet.free
   const FMN_ADDR = Config.testnet.fmn
+
+  const ONE = new BigNumber("1")
+  const ONE_BILLION = new BigNumber("1000000000")
 
 
   const currentBot = useRef(0)
@@ -165,28 +184,33 @@ export default function Monitor({ connection, config }) {
   }, { status: false })
 
 
+  const [ gasPrice, dispatchGas ] = useReducer((state, action) => {
+    return action
+  }, ONE_BILLION)
+
+
   const [ balances, setBalances ] = useState({
-    base: "Loading ...",
-    fsn: "Loading ...",
-    free: "Loading ...",
-    fmn: "Loading ..."
+    base: WAIT_MESSAGE,
+    fsn: WAIT_MESSAGE,
+    free: WAIT_MESSAGE,
+    fmn: WAIT_MESSAGE
   })
   const [ botSubStatus, setBotSubStatus ] = useState({
-    total: "Loading ...",
-    subs: "Loading ...",
-    nonSubs: "Loading ..."
+    total: WAIT_MESSAGE,
+    subs: WAIT_MESSAGE,
+    nonSubs: WAIT_MESSAGE
   })
   const [ subscribeActive, setSubscribeActive ] = useState(false)
   const [ running, setRunning ] = useState(false)
 
 
   useEffect(() => {
-    if(connection && config) {
+    if(connection && count) {
       const providerAbs = providers()
       getBalances(providerAbs)
       getSubCount(providerAbs)
     }
-  }, [ connection, config ])
+  }, [ connection, count ])
 
 
   useEffect(() => {
@@ -265,7 +289,7 @@ export default function Monitor({ connection, config }) {
     let subscribed = 0
     let notSubscribed = 0
     
-    for(let i = 0; i < config.count; i++) {
+    for(let i = 0; i < count; i++) {
       let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
       is.push(faucet.isSubscribed(current.address))
     }
@@ -314,14 +338,13 @@ export default function Monitor({ connection, config }) {
         continue
       }
 
-      txs.push(faucet.subscribe(current.address, { value: ethers.utils.parseUnits("1.0", 18), gasPrice: config.gasPrice, nonce: txCount + j }))
+      txs.push(faucet.subscribe(current.address, { value: ethers.utils.parseUnits("1.0", 18), gasPrice: gasPrice, nonce: txCount + j }))
       j++
     }
 
     const sentTxs = await Promise.all(txs)
 
     let txsToWait = sentTxs.map(tx => tx.wait())
-    console.log(`Transactions sent:`, sentTxs)
 
     const results = await Promise.allSettled(txsToWait)
 
@@ -340,6 +363,7 @@ export default function Monitor({ connection, config }) {
 
   const start = async () => {
     const { provider, base, faucet, free, fmn } = providers()
+    let currentGasPrice = gasPrice.toString()
     let nextClaim = Date.now() + WAIT_TIME
     dispatchTime({ nextClaim: nextClaim })
 
@@ -356,16 +380,12 @@ export default function Monitor({ connection, config }) {
           let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${currentBot.current + i}`)
           nextLoad.push(current.address)
         }
-        console.log(`Claiming for address ${currentBot.current} - ${currentBot.current + max} (${nextLoad})`)
         currentBot.current += max
 
         let txs = []
 
-        console.log(`Nonce: ${txCount}`)
-
         for(let j = 0; j < max; j++) {
-          console.log(`Claiming for address: ${nextLoad[j]}, #${txCount + j}`)
-          txs.push(faucet.claim(nextLoad[j], { gasLimit: "1000000", gasPrice: config.gasPrice, nonce: txCount + j }))
+          txs.push(faucet.claim(nextLoad[j], { gasLimit: "1000000", gasPrice: currentGasPrice, nonce: txCount + j }))
         }
 
         txCount += max
@@ -373,18 +393,11 @@ export default function Monitor({ connection, config }) {
         let sentTxs = await Promise.all(txs)
         
         let txsToWait = sentTxs.map(tx => tx.wait())
-        console.log(`Transactions sent:`, sentTxs)
 
         const results = await Promise.allSettled(txsToWait)
 
         success += (results.filter(res => res.status === "fulfilled")).length
         fail += (results.filter(res => res.status === "rejected")).length
-
-        console.log(`Transactions confirmed, ${success} successful and ${fail} failed.`)
-
-        results.forEach((res, index) => {
-          console.log(index, res)
-        })
 
         await getBalances({ provider, base, free, fmn })
 
@@ -458,12 +471,20 @@ export default function Monitor({ connection, config }) {
         </Action>
       </Body>
       <Heading>
+        Gas Price (gwei)
+      </Heading>
+      <Input type="number" min="1" defaultValue={ ONE.toNumber() } onChange={e => {
+        if(!subscribing.status && !running) {
+          dispatchGas(new BigNumber(e.target.value).multipliedBy(ONE_BILLION))
+        }
+      }}/>
+      <Heading>
         Start/Stop Claiming
       </Heading>
       <Body>
         <Row>
           <StartStop active={ control.active } onClick={() => {
-            if(control.active && control.play && !subscribing.status) {
+            if(control.active && control.play && !subscribing.status && (botSubStatus.total === botSubStatus.subs)) {
               setRunning(true)
             } else if(control.active && !control.play && !subscribing.status) {
               setRunning(false)
