@@ -162,6 +162,7 @@ export default function Monitor({ connection, count }) {
 
 
   const currentBot = useRef(0)
+  const subBot = useRef(0)
 
 
   const [ monitor, dispatch ] = useReducer((currentState, action) => {
@@ -316,6 +317,7 @@ export default function Monitor({ connection, count }) {
     dispatch({ message: `Subscribing ${botSubStatus.nonSubs} ...` })
     dispatchSubscribing({ status: true })
     const { base, provider, faucet, free, fmn } = providers()
+    const currentGasPrice = gasPrice.toString()
 
     const bal = ethers.utils.formatUnits(await provider.getBalance(base.address), 18)
 
@@ -327,35 +329,67 @@ export default function Monitor({ connection, count }) {
     let txCount = await provider.getTransactionCount(base.address)
 
     let success = 0, fail = 0
-    let txs = []
-    let j = 0
+    let totalLoad = []
+    let busy = false
 
     for(let i = 0; i < botSubStatus.total; i++) {
       let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
       const is = await faucet.isSubscribed(current.address)
       
-      if(is) {
-        continue
+      if(!is) {
+        totalLoad.push(current.address)
       }
-
-      txs.push(faucet.subscribe(current.address, { value: ethers.utils.parseUnits("1.0", 18), gasPrice: gasPrice, nonce: txCount + j }))
-      j++
     }
 
-    const sentTxs = await Promise.all(txs)
+    const subscribingInterval = setInterval(async () => {
+      if(!busy && subBot.current < botSubStatus.nonSubs) {
+        busy = true
+        
+        let max = CLAIMS_PER_BLOCK < totalLoad.length ? CLAIMS_PER_BLOCK : totalLoad.length
 
-    let txsToWait = sentTxs.map(tx => tx.wait())
+        let nextLoad = []
 
-    const results = await Promise.allSettled(txsToWait)
+        let startValue = subBot.current
+        let maxIteration = subBot.current + max
+        subBot.current += max
 
-    success += (results.filter(res => res.status === "fulfilled")).length
-    fail += (results.filter(res => res.status === "rejected")).length
+        for(let i = startValue; i < maxIteration; i++) {
+          let current = totalLoad[i]
+          const is = await faucet.isSubscribed(current)
 
-    dispatch({ message: `Subscribed ${success}, failed ${fail}, updating balances ...` })
+          if(!is) {
+            nextLoad.push(current)
+          }
+        }
 
-    await getBalances({ provider, base, free, fmn })
-    await getSubCount({ faucet })
-    dispatchSubscribing({ status: false })
+        let txs = []
+
+        for(let j = 0; j < nextLoad.length; j++) {
+          txs.push(faucet.subscribe(nextLoad[j], { gasLimit: "1000000", value: ethers.utils.parseUnits("1.0", 18), gasPrice: currentGasPrice, nonce: txCount + j }))
+        }
+
+        txCount += max
+
+        const sentTxs = await Promise.all(txs)
+
+        let txsToWait = sentTxs.map(tx => tx.wait())
+
+        const results = await Promise.allSettled(txsToWait)
+
+        success += (results.filter(res => res.status === "fulfilled")).length
+        fail += (results.filter(res => res.status === "rejected")).length
+
+        dispatch({ message: `Subscribed ${success}, failed ${fail}, updating balances ...` })
+        busy = false
+      } else {
+        dispatch({ message: `Subscribing ${ botSubStatus.nonSubs } bots. Please wait ...`})
+        clearInterval(subscribingInterval)
+        await getBalances({ provider, base, free, fmn })
+        await getSubCount({ faucet })
+        dispatchSubscribing({ status: false })
+        subBot.current = 0
+      }
+    }, 15000)
   }
 
 
@@ -371,16 +405,22 @@ export default function Monitor({ connection, count }) {
 
     let success = 0
     let fail = 0
+    let busy = false
 
-    const claiming = setInterval(async () => {
-      if(running && currentBot.current < botSubStatus.subs) {
+    const claimingInterval = setInterval(async () => {
+      if(!busy && running && currentBot.current < botSubStatus.subs) {
+        busy = true
         let nextLoad = []
         let max = CLAIMS_PER_BLOCK < botSubStatus.subs ? CLAIMS_PER_BLOCK : botSubStatus.subs
-        for(let i = currentBot.current; i < max; i++) {
-          let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${currentBot.current + i}`)
+
+        let startValue = currentBot.current
+        let maxIteration = currentBot.current + max
+        currentBot.current += max
+
+        for(let i = startValue; i < maxIteration; i++) {
+          let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${ currentBot.current + i }`)
           nextLoad.push(current.address)
         }
-        currentBot.current += max
 
         let txs = []
 
@@ -401,10 +441,11 @@ export default function Monitor({ connection, count }) {
 
         await getBalances({ provider, base, free, fmn })
 
-        dispatch({ message: `${success} successful and ${fail} failed, next claim at ${(new Date(nextClaim)).toISOString()}.` })
+        dispatch({ message: `${ success } successful and ${fail} failed, next claim at ${ (new Date(nextClaim)).toISOString()}.` })
+        busy = false
       } else {
-        dispatch({ message: `Claim transactions sent, next claim at ${(new Date(nextClaim)).toISOString()}.`})
-        clearInterval(claiming)
+        dispatch({ message: `Claim transactions sent, next claim at ${ (new Date(nextClaim)).toISOString()}.` })
+        clearInterval(claimingInterval)
         currentBot.current = 0
       }
     }, 15000)

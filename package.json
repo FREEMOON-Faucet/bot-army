@@ -29,7 +29,7 @@
     "start-electron-win": "set ELECTRON_START_URL=http://localhost:3000 && electron .",
     "build-electron": "mkdir build/src && cp -r electron/. build/electron",
     "build-electron-win": "mkdir build\\src && Xcopy /E /I /Y electron build\\electron",
-    "package": "npm run build && npm run build-electron && electron-builder build --win -c.extraMetadata.main=build/electron/main.js --publish never",
+    "package": "npm run build && npm run build-electron && electron-builder build -c.extraMetadata.main=build/electron/main.js --publish never",
     "package-win": "npm run build && npm run build-electron-win && electron-builder build -c.extraMetadata.main=build/electron/main.js --publish never"
   },
   "eslintConfig": {
