@@ -7,10 +7,6 @@ import WalletSettings from "./pages/WalletSettings"
 import BotCount from "./pages/BotCount"
 import Monitor from "./pages/Monitor"
 
-import Config from "./config.mjs"
-
-const PROVIDER = Config.testnet.provider
-
 
 const Container = styled.div`
   display: flex;
@@ -59,10 +55,10 @@ function App() {
   }, [ connection, count ])
 
 
-  const generateWallet = async seedPhrase => {
+  const generateWallet = async wallet => {
     setConnection({
-      provider: PROVIDER,
-      phrase: seedPhrase
+      phrase: wallet.words,
+      provider: wallet.provider
     })
   }
 

@@ -1,6 +1,5 @@
 import { useState } from "react"
 import styled from "styled-components"
-import BigNumber from "bignumber.js"
 
 
 const GasContainer = styled.div`

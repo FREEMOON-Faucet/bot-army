@@ -2,14 +2,12 @@ const Config = {
   mainnet: {
     faucet: "0x1B1459D4B9eD19050ECb1E9959e0d94c0FBE0603",
     free: "0x6403eDe3b7604ea4883670c670BeA288618BD5F2",
-    fmn: "0xB80A6C4F2a279ec91921ca30da726c534462125C",
-    provider: "https://mainway.freemoon.xyz/gate"
+    fmn: "0xB80A6C4F2a279ec91921ca30da726c534462125C"
   },
   testnet: {
     faucet: "0x8F72b524431B359cA491981cB9fa8edA2d8483bf",
     free: "0x984e4B2bE971747a1A545CFe58f564F224148dC5",
-    fmn: "0x96be0fd6c2f434bdb0E1a61148Fe4bbA5cc19987",
-    provider: "https://testway.freemoon.xyz/gate"
+    fmn: "0x96be0fd6c2f434bdb0E1a61148Fe4bbA5cc19987"
   },
   abi: [
     {

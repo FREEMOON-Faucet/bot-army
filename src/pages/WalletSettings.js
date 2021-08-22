@@ -36,8 +36,8 @@ const ContentContainer = styled.div`
   flex-wrap: wrap;
   width: 80%;
   max-width: 550px;
-  margin: 10px 0;
-  padding: 10px;
+  margin-bottom: 10px;
+  padding: 0 10px;
   border: ${ props => props.border ? "1px solid #000" : "0" };
   border-radius: 5px;
 `
@@ -100,6 +100,20 @@ const Text = styled.div`
   text-align: center;
 `
 
+const Input = styled.input`
+  width: 80%;
+  max-width: 420px;
+  height: 40px;
+  margin: 5px 0;
+  padding: 0;
+  border: 1px solid black;
+  border-radius: 4px;
+  outline: none;
+  font-size: 1.2rem;
+  text-align: center;
+  line-height: 30px;
+`
+
 
 export default function WalletSettings({ generateWallet }) {
 
@@ -109,6 +123,7 @@ export default function WalletSettings({ generateWallet }) {
     address: "",
     privateKey: ""
   })
+  const [ provider, setProvider ] = useState("https://mainway.freemoon.xyz/gate")
 
 
   const [ words, dispatch ] = useReducer((state, action) => {
@@ -131,7 +146,10 @@ export default function WalletSettings({ generateWallet }) {
   const sendWalletSettings = () => {
     const formattedPhrase = words.join().replaceAll(" ", "").replaceAll(",", " ")
 
-    generateWallet(formattedPhrase)
+    generateWallet({
+      words: formattedPhrase,
+      provider
+    })
   }
 
 
@@ -146,19 +164,44 @@ export default function WalletSettings({ generateWallet }) {
     setWallet({
       display: true,
       address: newWallet.address,
-      privateKey: newWallet.privateKey
+      privateKey: newWallet.privateKey,
+      provider: provider
     })
   }
 
 
-  const validateMnemonic = () => {
+  const validateInputs = async () => {
     const phrase = words.join().replaceAll(" ", "").replaceAll(",", " ")
-    return ethers.utils.isValidMnemonic(phrase)
+
+    let chainId
+    try {
+      const testProvider = new ethers.providers.JsonRpcProvider(provider)
+      const net = await testProvider.getNetwork()
+      chainId = net.chainId
+    } catch(err) {
+      chainId = null
+    }
+
+
+    let isFusion = chainId && (chainId === 46688 || chainId === 32659)
+    let isValid = Boolean(ethers.utils.isValidMnemonic(phrase) && isFusion)
+    
+    if(isValid) {
+      sendWalletSettings()
+    } else {
+      setMonitor("Invalid Seed Phrase or Gateway.")
+    }
   }
 
 
   return (
     <WalletSettingsContainer>
+      <Heading>
+        Gateway URL
+      </Heading>
+      <ContentContainer>
+        <Input defaultValue={ provider } spellCheck={ false } onChange={ e => setProvider(e.target.value) }/>
+      </ContentContainer>
       <Heading>
         Bot Army Seed Phrase
       </Heading>
@@ -191,12 +234,7 @@ export default function WalletSettings({ generateWallet }) {
           { wallet.privateKey }
         </MonitorAction>
         <Button onClick={() => {
-          const isValid = validateMnemonic()
-          if(isValid) {
-            sendWalletSettings()
-          } else {
-            setMonitor("Invalid Seed Phrase.")
-          }
+          validateInputs()
         }}>
           Continue
         </Button>
