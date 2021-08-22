@@ -143,12 +143,13 @@ export default function WalletSettings({ generateWallet }) {
   }
 
 
-  const sendWalletSettings = () => {
+  const sendWalletSettings = network => {
     const formattedPhrase = words.join().replaceAll(" ", "").replaceAll(",", " ")
 
     generateWallet({
       words: formattedPhrase,
-      provider
+      provider,
+      network
     })
   }
 
@@ -164,8 +165,7 @@ export default function WalletSettings({ generateWallet }) {
     setWallet({
       display: true,
       address: newWallet.address,
-      privateKey: newWallet.privateKey,
-      provider: provider
+      privateKey: newWallet.privateKey
     })
   }
 
@@ -185,9 +185,13 @@ export default function WalletSettings({ generateWallet }) {
 
     let isFusion = chainId && (chainId === 46688 || chainId === 32659)
     let isValid = Boolean(ethers.utils.isValidMnemonic(phrase) && isFusion)
+
+    let network
+    if(chainId === 32659) network = "mainnet"
+    else if(chainId === 46688) network = "testnet"
     
     if(isValid) {
-      sendWalletSettings()
+      sendWalletSettings(network)
     } else {
       setMonitor("Invalid Seed Phrase or Gateway.")
     }

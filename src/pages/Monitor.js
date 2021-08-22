@@ -152,10 +152,6 @@ export default function Monitor({ connection, count }) {
 
   const FAUCET_ABI = Config.abi
   const ERC20_ABI = Config.erc20Abi
-  
-  const FAUCET_ADDR =Config.testnet.faucet
-  const FREE_ADDR = Config.testnet.free
-  const FMN_ADDR = Config.testnet.fmn
 
   const ONE = new BigNumber("1")
   const ONE_BILLION = new BigNumber("1000000000")
@@ -261,9 +257,21 @@ export default function Monitor({ connection, count }) {
     const base = ethers.Wallet.fromMnemonic(connection.phrase)
     const signer = base.connect(provider)
 
-    const faucet = new ethers.Contract(FAUCET_ADDR, FAUCET_ABI, signer)
-    const free = new ethers.Contract(FREE_ADDR, ERC20_ABI, provider)
-    const fmn = new ethers.Contract(FMN_ADDR, ERC20_ABI, provider)
+    let faucetAddr, freeAddr, fmnAddr
+    
+    if(connection.network === "mainnet") {
+      faucetAddr = Config.mainnet.faucet
+      freeAddr = Config.mainnet.free
+      fmnAddr = Config.mainnet.fmn
+    } else if(connection.network === "testnet") {
+      faucetAddr = Config.testnet.faucet
+      freeAddr = Config.testnet.free
+      fmnAddr = Config.testnet.fmn
+    }
+
+    const faucet = new ethers.Contract(faucetAddr, FAUCET_ABI, signer)
+    const free = new ethers.Contract(freeAddr, ERC20_ABI, provider)
+    const fmn = new ethers.Contract(fmnAddr, ERC20_ABI, provider)
 
     return { provider, signer, base, faucet, free, fmn }
   }
@@ -368,7 +376,8 @@ export default function Monitor({ connection, count }) {
         success += (results.filter(res => res.status === "fulfilled")).length
         fail += (results.filter(res => res.status === "rejected")).length
 
-        let mssg = fail ? `Subscribed ${ success } / ${ botSubStatus.nonSubs }, failed ${ fail }, updating balances ...`
+        let mssg = fail ?
+        `Subscribed ${ success } / ${ botSubStatus.nonSubs }, failed ${ fail }, updating balances ...`
         :
         `Subscribed ${ success } / ${ botSubStatus.nonSubs }, updating balances ...`
 
@@ -434,13 +443,15 @@ export default function Monitor({ connection, count }) {
 
         await getBalances({ provider, base, free, fmn })
 
-        let nextClaimDate = (new Date(nextClaim)).toISOString().replace("T", " ")
-        let mssg = fail ? `Claimed for ${ success } / ${ botSubStatus.subs }, failed ${ fail }. Next claim at ${ nextClaimDate }`
+        let mssg = fail ?
+        `Claimed for ${ success } / ${ botSubStatus.subs }, failed ${ fail }.`
         :
-        `Claimed for ${ success } / ${ botSubStatus.subs }. Next claim at ${ nextClaimDate }`
+        `Claimed for ${ success } / ${ botSubStatus.subs }`
 
         dispatch({ message: mssg })
       } else {
+        let nextClaimDate = (new Date(nextClaim)).toISOString().replace("T", " ")
+        dispatch({ message: `Next claim at ${ nextClaimDate }`})
         clearInterval(claimingInterval)
         await getBalances({ provider, base, free, fmn })
         await getSubCount({ faucet })

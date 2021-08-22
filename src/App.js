@@ -58,7 +58,8 @@ function App() {
   const generateWallet = async wallet => {
     setConnection({
       phrase: wallet.words,
-      provider: wallet.provider
+      provider: wallet.provider,
+      network: wallet.network
     })
   }
 
