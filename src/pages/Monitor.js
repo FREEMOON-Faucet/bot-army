@@ -377,9 +377,9 @@ export default function Monitor({ connection, count }) {
         fail += (results.filter(res => res.status === "rejected")).length
 
         let mssg = fail ?
-        `Subscribed ${ success } / ${ botSubStatus.nonSubs }, failed ${ fail }, updating balances ...`
+        `Subscribed ${ success } / ${ botSubStatus.nonSubs }, failed ${ fail }`
         :
-        `Subscribed ${ success } / ${ botSubStatus.nonSubs }, updating balances ...`
+        `Subscribed ${ success } / ${ botSubStatus.nonSubs }`
 
         dispatch({ message: mssg })
       } else {
@@ -443,15 +443,14 @@ export default function Monitor({ connection, count }) {
 
         await getBalances({ provider, base, free, fmn })
 
+        let nextClaimDate = (new Date(nextClaim)).toISOString().replace("T", " ")
         let mssg = fail ?
-        `Claimed for ${ success } / ${ botSubStatus.subs }, failed ${ fail }.`
+        `Claimed for ${ success } / ${ botSubStatus.subs }, failed ${ fail }. Next claim at ${ nextClaimDate }`
         :
-        `Claimed for ${ success } / ${ botSubStatus.subs }`
+        `Claimed for ${ success } / ${ botSubStatus.subs }, Next claim at ${ nextClaimDate }`
 
         dispatch({ message: mssg })
       } else {
-        let nextClaimDate = (new Date(nextClaim)).toISOString().replace("T", " ")
-        dispatch({ message: `Next claim at ${ nextClaimDate }`})
         clearInterval(claimingInterval)
         await getBalances({ provider, base, free, fmn })
         await getSubCount({ faucet })
