@@ -159,6 +159,7 @@ export default function Monitor({ connection, count }) {
 
   const currentBot = useRef(0)
   const subBot = useRef(0)
+  const subCheck = useRef(0)
 
 
   const [ monitor, dispatch ] = useReducer((state, action) => {
@@ -211,7 +212,7 @@ export default function Monitor({ connection, count }) {
 
 
   useEffect(() => {
-    if(botSubStatus.nonSubs > 0 && !running) {
+    if(botSubStatus.nonSubs > 0 && !running && !subscribing.status) {
       setSubscribeActive(true)
     } else if(botSubStatus.nonSubs === 0 && !running) {
       dispatch({ message: `Start claiming for subscribed bot addresses.` })
@@ -293,28 +294,40 @@ export default function Monitor({ connection, count }) {
 
 
   const getSubCount = async ({ faucet }) => {
-    let is = []
     let total = 0
     let subscribed = 0
     let notSubscribed = 0
-    
-    for(let i = 0; i < count; i++) {
-      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
-      is.push(faucet.isSubscribed(current.address))
-    }
 
-    let isRes = await Promise.all(is)
-    
-    for(let i = 0; i < isRes.length; i++) {
-      isRes[i] ? subscribed++ : notSubscribed++
-      total++
-    }
+    let remainingChecks = count
 
-    setBotSubStatus({
-      total,
-      subs: subscribed,
-      nonSubs: notSubscribed
-    })
+    const subCheckInterval = setInterval(async () => {
+      if(subCheck.current < remainingChecks) {
+        remainingChecks = count - subCheck.current
+        let max = CLAIMS_PER_BLOCK < remainingChecks ? CLAIMS_PER_BLOCK : remainingChecks
+
+        let currentChecks = []
+        let startValue = subCheck.current
+        let maxIteration = subCheck.current + max
+        subCheck.current += max
+
+        for(let i = startValue; i < maxIteration; i++) {
+          let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
+          currentChecks.push(faucet.isSubscribed(current.address))
+        }
+
+        let results = await Promise.all(currentChecks)
+
+        for(let i = 0; i < results.length; i++) {
+          total++
+          results[i] ? subscribed++ : notSubscribed++
+        }
+
+        setBotSubStatus({ total, subs: subscribed, nonSubs: notSubscribed })
+      } else {
+        clearInterval(subCheckInterval)
+        subCheck.current = 0
+      }
+    }, 15000)
   }
 
 
@@ -357,8 +370,6 @@ export default function Monitor({ connection, count }) {
         let maxIteration = subBot.current + max
         subBot.current += max
 
-        console.log(`Subscribing ${ startValue } - ${ maxIteration } / ${ totalLoad.length }`)
-
         let nextLoad = totalLoad.slice(startValue, maxIteration)
 
         let txs = []
@@ -382,12 +393,15 @@ export default function Monitor({ connection, count }) {
         `Subscribed ${ success } / ${ botSubStatus.nonSubs }`
 
         dispatch({ message: mssg })
+        
+        if(!subscribing.status) {
+          await getSubCount({ faucet })
+          await getBalances({ provider, base, free, fmn })
+        }
       } else {
-        clearInterval(subscribingInterval)
-        await getBalances({ provider, base, free, fmn })
-        await getSubCount({ faucet })
-        dispatchSubscribing({ status: false })
         subBot.current = 0
+        clearInterval(subscribingInterval)
+        dispatchSubscribing({ status: false })
       }
     }, 15000)
   }
@@ -422,8 +436,6 @@ export default function Monitor({ connection, count }) {
         let maxIteration = currentBot.current + max
         currentBot.current += max
 
-        console.log(`Claiming ${ startValue } - ${ maxIteration } / ${ totalLoad.length }`)
-
         let nextLoad = totalLoad.slice(startValue, maxIteration)
 
         let txs = []
@@ -450,11 +462,14 @@ export default function Monitor({ connection, count }) {
         `Claimed for ${ success } / ${ botSubStatus.subs }, Next claim at ${ nextClaimDate }`
 
         dispatch({ message: mssg })
+        
+        if(currentBot.current === 0) {
+          await getBalances({ provider, base, free, fmn })
+          await getSubCount({ faucet })
+        }
       } else {
-        clearInterval(claimingInterval)
-        await getBalances({ provider, base, free, fmn })
-        await getSubCount({ faucet })
         currentBot.current = 0
+        clearInterval(claimingInterval)
       }
     }, 15000)
   }
@@ -533,13 +548,17 @@ export default function Monitor({ connection, count }) {
       <Body>
         <Row>
           <StartStop active={ control.active } onClick={() => {
-            if(control.active && control.play && !subscribing.status && (botSubStatus.total === botSubStatus.subs)) {
+            if(botSubStatus.total === WAIT_MESSAGE) dispatch({ message: `Please wait for subscriptions to load.`})
+            else if(subscribing.status) dispatch({ message: `Subscribing bots, please wait.` })
+            else if(botSubStatus.total !== botSubStatus.subs) {
+              dispatch({ message: `Make sure all your bots are subscribed, and wait for "Subscribed Bots" to update.`})
+            } else if(control.active && control.play && !subscribing.status && (botSubStatus.total === botSubStatus.subs) && botSubStatus.total !== WAIT_MESSAGE) {
               setRunning(true)
             } else if(control.active && !control.play && !subscribing.status) {
               setRunning(false)
             }
           }}>
-            { control.active && !control.play ? <FaStop size={25}/> : <FaPlay size={25}/> }
+            { control.active && !control.play ? <FaStop size={ 25 }/> : <FaPlay size={ 25 }/> }
           </StartStop>
         </Row>
       </Body>
