@@ -1,10 +1,11 @@
-const { app, BrowserWindow } = require("electron")
+const { app, BrowserWindow, powerSaveBlocker } = require("electron")
 const path = require("path")
 const url = require("url")
 
 let mainWindow
 
 function createWindow() {
+  const id = powerSaveBlocker.start('prevent-display-sleep')
   const startUrl = process.env.ELECTRON_START_URL || url.format({
     pathname: path.join(__dirname, "../index.html"),
     protocol: "file:",
@@ -18,6 +19,7 @@ function createWindow() {
   })
   mainWindow.loadURL(startUrl)
   mainWindow.on("closed", function() {
+    powerSaveBlocker.stop(id)
     mainWindow = null
   })
 }
