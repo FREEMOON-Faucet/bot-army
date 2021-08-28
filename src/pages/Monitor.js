@@ -360,9 +360,12 @@ export default function Monitor({ connection, count }) {
       totalLoad.push(current.address)
     }
 
+    let remainingChecks = totalLoad.length
+
     const subscribingInterval = setInterval(async () => {
-      if(subBot.current < botSubStatus.nonSubs) {
-        let max = CLAIMS_PER_BLOCK < totalLoad.length ? CLAIMS_PER_BLOCK : totalLoad.length
+      if(subBot.current < remainingChecks) {
+        remainingChecks = totalLoad.length - subBot.current
+        let max = CLAIMS_PER_BLOCK < remainingChecks ? CLAIMS_PER_BLOCK : remainingChecks
 
         let currentTxCount = txCount
         txCount += max
