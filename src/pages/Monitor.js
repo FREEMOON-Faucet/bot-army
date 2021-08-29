@@ -1,574 +1,574 @@
-import { useState, useEffect, useRef, useReducer } from "react"
-import styled from "styled-components"
-import { ethers } from "ethers"
-import { FaStop, FaPlay } from "react-icons/fa"
-import BigNumber from "bignumber.js"
+// import { useState, useEffect, useRef, useReducer } from "react"
+// import styled from "styled-components"
+// import { ethers } from "ethers"
+// import { FaStop, FaPlay } from "react-icons/fa"
+// import BigNumber from "bignumber.js"
 
-import Config from "../config.mjs"
-
-
-const MonitorContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-`
-
-const Heading = styled.div`
-  width: 80%;
-  max-width: 600px;
-  height: 25px;
-  margin: 20px 0 10px;
-  font-size: 1.4rem;
-  font-weight: bold;
-  text-align: center;
-`
-
-const Balances = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-  width: 80%;
-  max-width: 300px;
-  height: 200px;
-  border: 1px solid black;
-  border-radius: 5px;
-`
-
-const Row = styled.div`
-  display: flex;
-  justify-content: center;
-  width: 100%;
-`
-
-const Value = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 50%;
-  height: 50px;
-  font-size: 1.4rem;
-  font-weight: ${props => props.symbol ? "900" : "300"};
-`
-
-const SubHeading = styled.div`
-  width: 100%;
-  height: 15px;
-  margin: 10px 0 5px;
-  font-size: 1.2rem;
-  font-style: italic;
-  text-align: center;
-`
-
-const Body = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 500px;
-  border: 1px solid black;
-  border-radius: 5px;
-`
-
-const BodyValue = styled.div`
-  width: 100%;
-  margin: 5px 0 10px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  text-align: center;
-`
-
-const Action = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 98%;
-  max-width: 490px;
-  height: 50px;
-  margin: 5px 0;
-  border-radius: 4px;
-  font-size: 1.2rem;
-  cursor: ${props => props.active ? "pointer" : "default"};
-  background: ${props => props.active ? "rgb(146, 180, 227)" : "#ddd"};
-  box-shadow: ${props => props.active ? "0px 4px 12px #ccc" : "0"};
-`
-
-const StartStop = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 98%;
-  max-width: 500px;
-  height: 100px;
-  margin: 10px;
-  border-radius: 4px;
-  cursor: ${props => props.active ? "pointer" : "default"};
-  background: ${props => props.active ? "rgb(146, 180, 227)" : "#ddd"};
-  box-shadow: ${props => props.active ? "0px 4px 12px #ccc" : "0"};
-`
-
-const MonitorAction = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 80%;
-  max-width: 600px;
-  height: 150px;
-  margin-top: 20px;
-  padding: 5px;
-  border-radius: 5px;
-  font-size: 1.4rem;
-  background: #ddd;
-  box-shadow: 0px 4px 12px #ccc;
-  text-align: center;
-`
-
-const Footer = styled.div`
-  width: 100%;
-  height: 50px;
-`
-
-const Input = styled.input`
-  width: 100%;
-  max-width: 495px;
-  height: 50px;
-  margin: 5px 0;
-  padding: 0;
-  border: 1px solid black;
-  border-radius: 4px;
-  outline: none;
-  font-size: 1.5rem;
-  text-align: center;
-  line-height: 30px;
-`
+// import Config from "../config.mjs"
 
 
-export default function Monitor({ connection, count }) {
+// const MonitorContainer = styled.div`
+//   display: flex;
+//   flex-direction: column;
+//   align-items: center;
+//   width: 100%;
+// `
 
-  const WAIT_MESSAGE = "Please Wait ..."
-  const WAIT_TIME = 1000 * (3600 + 60)  // 61 minutes, to milliseconds
-  // const WAIT_TIME = 20000
-  const CLAIMS_PER_BLOCK = 6 * 13
+// const Heading = styled.div`
+//   width: 80%;
+//   max-width: 600px;
+//   height: 25px;
+//   margin: 20px 0 10px;
+//   font-size: 1.4rem;
+//   font-weight: bold;
+//   text-align: center;
+// `
 
-  const FAUCET_ABI = Config.abi
-  const ERC20_ABI = Config.erc20Abi
+// const Balances = styled.div`
+//   display: flex;
+//   flex-direction: column;
+//   justify-content: space-evenly;
+//   width: 80%;
+//   max-width: 300px;
+//   height: 200px;
+//   border: 1px solid black;
+//   border-radius: 5px;
+// `
 
-  const ONE = new BigNumber("1")
-  const ONE_BILLION = new BigNumber("1000000000")
+// const Row = styled.div`
+//   display: flex;
+//   justify-content: center;
+//   width: 100%;
+// `
+
+// const Value = styled.div`
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   width: 50%;
+//   height: 50px;
+//   font-size: 1.4rem;
+//   font-weight: ${props => props.symbol ? "900" : "300"};
+// `
+
+// const SubHeading = styled.div`
+//   width: 100%;
+//   height: 15px;
+//   margin: 10px 0 5px;
+//   font-size: 1.2rem;
+//   font-style: italic;
+//   text-align: center;
+// `
+
+// const Body = styled.div`
+//   display: flex;
+//   flex-direction: column;
+//   align-items: center;
+//   width: 100%;
+//   max-width: 500px;
+//   border: 1px solid black;
+//   border-radius: 5px;
+// `
+
+// const BodyValue = styled.div`
+//   width: 100%;
+//   margin: 5px 0 10px;
+//   font-size: 1.2rem;
+//   font-weight: bold;
+//   text-align: center;
+// `
+
+// const Action = styled.div`
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   width: 98%;
+//   max-width: 490px;
+//   height: 50px;
+//   margin: 5px 0;
+//   border-radius: 4px;
+//   font-size: 1.2rem;
+//   cursor: ${props => props.active ? "pointer" : "default"};
+//   background: ${props => props.active ? "rgb(146, 180, 227)" : "#ddd"};
+//   box-shadow: ${props => props.active ? "0px 4px 12px #ccc" : "0"};
+// `
+
+// const StartStop = styled.div`
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   width: 98%;
+//   max-width: 500px;
+//   height: 100px;
+//   margin: 10px;
+//   border-radius: 4px;
+//   cursor: ${props => props.active ? "pointer" : "default"};
+//   background: ${props => props.active ? "rgb(146, 180, 227)" : "#ddd"};
+//   box-shadow: ${props => props.active ? "0px 4px 12px #ccc" : "0"};
+// `
+
+// const MonitorAction = styled.div`
+//   display: flex;
+//   justify-content: center;
+//   align-items: center;
+//   width: 80%;
+//   max-width: 600px;
+//   height: 150px;
+//   margin-top: 20px;
+//   padding: 5px;
+//   border-radius: 5px;
+//   font-size: 1.4rem;
+//   background: #ddd;
+//   box-shadow: 0px 4px 12px #ccc;
+//   text-align: center;
+// `
+
+// const Footer = styled.div`
+//   width: 100%;
+//   height: 50px;
+// `
+
+// const Input = styled.input`
+//   width: 100%;
+//   max-width: 495px;
+//   height: 50px;
+//   margin: 5px 0;
+//   padding: 0;
+//   border: 1px solid black;
+//   border-radius: 4px;
+//   outline: none;
+//   font-size: 1.5rem;
+//   text-align: center;
+//   line-height: 30px;
+// `
 
 
-  const currentBot = useRef(0)
-  const subBot = useRef(0)
-  const subCheck = useRef(0)
+// export default function Monitor({ connection, count }) {
+
+//   const WAIT_MESSAGE = "Please Wait ..."
+//   const WAIT_TIME = 1000 * (3600 + 60)  // 61 minutes, to milliseconds
+//   // const WAIT_TIME = 20000
+//   const CLAIMS_PER_BLOCK = 6 * 13
+
+//   const FAUCET_ABI = Config.abi
+//   const ERC20_ABI = Config.erc20Abi
+
+//   const ONE = new BigNumber("1")
+//   const ONE_BILLION = new BigNumber("1000000000")
 
 
-  const [ monitor, dispatch ] = useReducer((state, action) => {
-    return action
-  }, { message: `...` })
+//   const currentBot = useRef(0)
+//   const subBot = useRef(0)
+//   const subCheck = useRef(0)
 
 
-  const [ control, dispatchControl ] = useReducer((state, action) => {
-    return action
-  }, { active: false, play: false })
+//   const [ monitor, dispatch ] = useReducer((state, action) => {
+//     return action
+//   }, { message: `...` })
 
 
-  const [ time, dispatchTime ] = useReducer((state, action) => {
-    return action
-  }, { nextClaim: Date.now() })
+//   const [ control, dispatchControl ] = useReducer((state, action) => {
+//     return action
+//   }, { active: false, play: false })
 
 
-  const [ subscribing, dispatchSubscribing ] = useReducer((state, action) => {
-    return action
-  }, { status: false })
+//   const [ time, dispatchTime ] = useReducer((state, action) => {
+//     return action
+//   }, { nextClaim: Date.now() })
 
 
-  const [ gasPrice, dispatchGas ] = useReducer((state, action) => {
-    return action
-  }, ONE_BILLION)
+//   const [ subscribing, dispatchSubscribing ] = useReducer((state, action) => {
+//     return action
+//   }, { status: false })
 
 
-  const [ balances, setBalances ] = useState({
-    base: WAIT_MESSAGE,
-    fsn: WAIT_MESSAGE,
-    free: WAIT_MESSAGE,
-    fmn: WAIT_MESSAGE
-  })
-  const [ botSubStatus, setBotSubStatus ] = useState({
-    total: WAIT_MESSAGE,
-    subs: WAIT_MESSAGE,
-    nonSubs: WAIT_MESSAGE
-  })
-  const [ subscribeActive, setSubscribeActive ] = useState(false)
-  const [ running, setRunning ] = useState(false)
+//   const [ gasPrice, dispatchGas ] = useReducer((state, action) => {
+//     return action
+//   }, ONE_BILLION)
 
 
-  useEffect(() => {
-    if(connection && count) {
-      const providerAbs = providers()
-      getBalances(providerAbs)
-      getSubCount(providerAbs)
-    }
-  }, [ connection, count ])
+//   const [ balances, setBalances ] = useState({
+//     base: WAIT_MESSAGE,
+//     fsn: WAIT_MESSAGE,
+//     free: WAIT_MESSAGE,
+//     fmn: WAIT_MESSAGE
+//   })
+//   const [ botSubStatus, setBotSubStatus ] = useState({
+//     total: WAIT_MESSAGE,
+//     subs: WAIT_MESSAGE,
+//     nonSubs: WAIT_MESSAGE
+//   })
+//   const [ subscribeActive, setSubscribeActive ] = useState(false)
+//   const [ running, setRunning ] = useState(false)
 
 
-  useEffect(() => {
-    if(botSubStatus.nonSubs > 0 && !running && !subscribing.status) {
-      setSubscribeActive(true)
-    } else if(botSubStatus.nonSubs === 0 && !running) {
-      dispatch({ message: `Start claiming for subscribed bot addresses.` })
-      dispatchControl({
-        active: true,
-        play: true
-      })
-    }
-  }, [ botSubStatus ])
+//   useEffect(() => {
+//     if(connection && count) {
+//       const providerAbs = providers()
+//       getBalances(providerAbs)
+//       getSubCount(providerAbs)
+//     }
+//   }, [ connection, count ])
 
 
-  useEffect(() => {
-    if(running) {
-      dispatchControl({
-        active: true,
-        play: false
-      })
+//   useEffect(() => {
+//     if(botSubStatus.nonSubs > 0 && !running && !subscribing.status) {
+//       setSubscribeActive(true)
+//     } else if(botSubStatus.nonSubs === 0 && !running) {
+//       dispatch({ message: `Start claiming for subscribed bot addresses.` })
+//       dispatchControl({
+//         active: true,
+//         play: true
+//       })
+//     }
+//   }, [ botSubStatus ])
 
-      dispatch({ message: `Claiming is active.`})
+
+//   useEffect(() => {
+//     if(running) {
+//       dispatchControl({
+//         active: true,
+//         play: false
+//       })
+
+//       dispatch({ message: `Claiming is active.`})
       
-      if(Date.now() >= time.nextClaim) {
-        start()
-      }
+//       if(Date.now() >= time.nextClaim) {
+//         start()
+//       }
 
-      const claimInterval = setInterval(() => start(), WAIT_TIME)
+//       const claimInterval = setInterval(() => start(), WAIT_TIME)
 
-      return () => {
-        setRunning(false)
-        clearInterval(claimInterval)
-      }
-    } else {
-      dispatch({ message: `Claiming is not active.` })
-      dispatchControl({
-        active: true,
-        play: true
-      })
-    }
-  }, [ running ])
+//       return () => {
+//         setRunning(false)
+//         clearInterval(claimInterval)
+//       }
+//     } else {
+//       dispatch({ message: `Claiming is not active.` })
+//       dispatchControl({
+//         active: true,
+//         play: true
+//       })
+//     }
+//   }, [ running ])
 
 
-  const providers = () => {
-    const provider = new ethers.providers.JsonRpcProvider(connection.provider)
-    const base = ethers.Wallet.fromMnemonic(connection.phrase)
-    const signer = base.connect(provider)
+//   const providers = () => {
+//     const provider = new ethers.providers.JsonRpcProvider(connection.provider)
+//     const base = ethers.Wallet.fromMnemonic(connection.phrase)
+//     const signer = base.connect(provider)
 
-    let faucetAddr, freeAddr, fmnAddr
+//     let faucetAddr, freeAddr, fmnAddr
     
-    if(connection.network === "mainnet") {
-      faucetAddr = Config.mainnet.faucet
-      freeAddr = Config.mainnet.free
-      fmnAddr = Config.mainnet.fmn
-    } else if(connection.network === "testnet") {
-      faucetAddr = Config.testnet.faucet
-      freeAddr = Config.testnet.free
-      fmnAddr = Config.testnet.fmn
-    }
+//     if(connection.network === "mainnet") {
+//       faucetAddr = Config.mainnet.faucet
+//       freeAddr = Config.mainnet.free
+//       fmnAddr = Config.mainnet.fmn
+//     } else if(connection.network === "testnet") {
+//       faucetAddr = Config.testnet.faucet
+//       freeAddr = Config.testnet.free
+//       fmnAddr = Config.testnet.fmn
+//     }
 
-    const faucet = new ethers.Contract(faucetAddr, FAUCET_ABI, signer)
-    const free = new ethers.Contract(freeAddr, ERC20_ABI, provider)
-    const fmn = new ethers.Contract(fmnAddr, ERC20_ABI, provider)
+//     const faucet = new ethers.Contract(faucetAddr, FAUCET_ABI, signer)
+//     const free = new ethers.Contract(freeAddr, ERC20_ABI, provider)
+//     const fmn = new ethers.Contract(fmnAddr, ERC20_ABI, provider)
 
-    return { provider, signer, base, faucet, free, fmn }
-  }
+//     return { provider, signer, base, faucet, free, fmn }
+//   }
 
-  const getBalances = async ({ provider, base, free, fmn }) => {
-    const fsnBal = ethers.utils.formatUnits(await provider.getBalance(base.address), 18)
-    const freeBal = ethers.utils.formatUnits(await free.balanceOf(base.address), 18)
-    const fmnBal = ethers.utils.formatUnits(await fmn.balanceOf(base.address), 18)
+//   const getBalances = async ({ provider, base, free, fmn }) => {
+//     const fsnBal = ethers.utils.formatUnits(await provider.getBalance(base.address), 18)
+//     const freeBal = ethers.utils.formatUnits(await free.balanceOf(base.address), 18)
+//     const fmnBal = ethers.utils.formatUnits(await fmn.balanceOf(base.address), 18)
 
-    setBalances({
-      base: base.address,
-      fsn: Number(fsnBal).toFixed(4),
-      free: Number(freeBal).toFixed(4),
-      fmn: Number(fmnBal).toFixed(4)
-    })
-  }
-
-
-
-
-  const getSubCount = async ({ faucet }) => {
-    let total = 0
-    let subscribed = 0
-    let notSubscribed = 0
-
-    let remainingChecks = count
-
-    const subCheckInterval = setInterval(async () => {
-      if(subCheck.current < remainingChecks) {
-        remainingChecks = count - subCheck.current
-        let max = CLAIMS_PER_BLOCK < remainingChecks ? CLAIMS_PER_BLOCK : remainingChecks
-
-        let currentChecks = []
-        let startValue = subCheck.current
-        let maxIteration = subCheck.current + max
-        subCheck.current += max
-
-        for(let i = startValue; i < maxIteration; i++) {
-          let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
-          currentChecks.push(faucet.isSubscribed(current.address))
-        }
-
-        let results = await Promise.all(currentChecks)
-
-        for(let i = 0; i < results.length; i++) {
-          total++
-          results[i] ? subscribed++ : notSubscribed++
-        }
-
-        setBotSubStatus({ total, subs: subscribed, nonSubs: notSubscribed })
-      } else {
-        clearInterval(subCheckInterval)
-        subCheck.current = 0
-      }
-    }, 15000)
-  }
+//     setBalances({
+//       base: base.address,
+//       fsn: Number(fsnBal).toFixed(4),
+//       free: Number(freeBal).toFixed(4),
+//       fmn: Number(fmnBal).toFixed(4)
+//     })
+//   }
 
 
 
 
-  const subscribeAll = async () => {
-    setSubscribeActive(false)
-    dispatch({ message: `Subscribing ${ botSubStatus.nonSubs} ...` })
-    dispatchSubscribing({ status: true })
-    const { base, provider, faucet, free, fmn } = providers()
-    const currentGasPrice = gasPrice.toString()
+//   const getSubCount = async ({ faucet }) => {
+//     let total = 0
+//     let subscribed = 0
+//     let notSubscribed = 0
 
-    const bal = ethers.utils.formatUnits(await provider.getBalance(base.address), 18)
+//     let remainingChecks = count
 
-    if(bal < botSubStatus.nonSubs) {
-      dispatch({ message: `Base address does not have enough FSN for subscription fees. Minimum Required FSN: ${botSubStatus.nonSubs}` })
-      return
-    }
+//     const subCheckInterval = setInterval(async () => {
+//       if(subCheck.current < remainingChecks) {
+//         remainingChecks = count - subCheck.current
+//         let max = CLAIMS_PER_BLOCK < remainingChecks ? CLAIMS_PER_BLOCK : remainingChecks
 
-    let txCount = await provider.getTransactionCount(base.address)
+//         let currentChecks = []
+//         let startValue = subCheck.current
+//         let maxIteration = subCheck.current + max
+//         subCheck.current += max
 
-    let success = 0, fail = 0
-    let totalLoad = []
+//         for(let i = startValue; i < maxIteration; i++) {
+//           let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
+//           currentChecks.push(faucet.isSubscribed(current.address))
+//         }
 
-    let startAddress = botSubStatus.subs
-    let endAddress = botSubStatus.total
+//         let results = await Promise.all(currentChecks)
 
-    for(let i = startAddress; i < endAddress; i++) {
-      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
-      totalLoad.push(current.address)
-    }
+//         for(let i = 0; i < results.length; i++) {
+//           total++
+//           results[i] ? subscribed++ : notSubscribed++
+//         }
 
-    let remainingChecks = totalLoad.length
+//         setBotSubStatus({ total, subs: subscribed, nonSubs: notSubscribed })
+//       } else {
+//         clearInterval(subCheckInterval)
+//         subCheck.current = 0
+//       }
+//     }, 15000)
+//   }
 
-    const subscribingInterval = setInterval(async () => {
-      if(subBot.current < remainingChecks) {
-        remainingChecks = totalLoad.length - subBot.current
-        let max = CLAIMS_PER_BLOCK < remainingChecks ? CLAIMS_PER_BLOCK : remainingChecks
 
-        let currentTxCount = txCount
-        txCount += max
-        let startValue = subBot.current
-        let maxIteration = subBot.current + max
-        subBot.current += max
 
-        let nextLoad = totalLoad.slice(startValue, maxIteration)
 
-        let txs = []
+//   const subscribeAll = async () => {
+//     setSubscribeActive(false)
+//     dispatch({ message: `Subscribing ${ botSubStatus.nonSubs} ...` })
+//     dispatchSubscribing({ status: true })
+//     const { base, provider, faucet, free, fmn } = providers()
+//     const currentGasPrice = gasPrice.toString()
 
-        for(let j = 0; j < nextLoad.length; j++) {
-          txs.push(faucet.subscribe(nextLoad[j], { gasLimit: "1000000", value: ethers.utils.parseUnits("1.0", 18), gasPrice: currentGasPrice, nonce: currentTxCount + j }))
-        }
+//     const bal = ethers.utils.formatUnits(await provider.getBalance(base.address), 18)
 
-        const sentTxs = await Promise.all(txs)
+//     if(bal < botSubStatus.nonSubs) {
+//       dispatch({ message: `Base address does not have enough FSN for subscription fees. Minimum Required FSN: ${botSubStatus.nonSubs}` })
+//       return
+//     }
 
-        let txsToWait = sentTxs.map(tx => tx.wait())
+//     let txCount = await provider.getTransactionCount(base.address)
 
-        const results = await Promise.allSettled(txsToWait)
+//     let success = 0, fail = 0
+//     let totalLoad = []
 
-        success += (results.filter(res => res.status === "fulfilled")).length
-        fail += (results.filter(res => res.status === "rejected")).length
+//     let startAddress = botSubStatus.subs
+//     let endAddress = botSubStatus.total
 
-        let mssg = fail ?
-        `Subscribed ${ success } / ${ botSubStatus.nonSubs }, failed ${ fail }`
-        :
-        `Subscribed ${ success } / ${ botSubStatus.nonSubs }`
+//     for(let i = startAddress; i < endAddress; i++) {
+//       let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
+//       totalLoad.push(current.address)
+//     }
 
-        dispatch({ message: mssg })
+//     let remainingChecks = totalLoad.length
+
+//     const subscribingInterval = setInterval(async () => {
+//       if(subBot.current < remainingChecks) {
+//         remainingChecks = totalLoad.length - subBot.current
+//         let max = CLAIMS_PER_BLOCK < remainingChecks ? CLAIMS_PER_BLOCK : remainingChecks
+
+//         let currentTxCount = txCount
+//         txCount += max
+//         let startValue = subBot.current
+//         let maxIteration = subBot.current + max
+//         subBot.current += max
+
+//         let nextLoad = totalLoad.slice(startValue, maxIteration)
+
+//         let txs = []
+
+//         for(let j = 0; j < nextLoad.length; j++) {
+//           txs.push(faucet.subscribe(nextLoad[j], { gasLimit: "1000000", value: ethers.utils.parseUnits("1.0", 18), gasPrice: currentGasPrice, nonce: currentTxCount + j }))
+//         }
+
+//         const sentTxs = await Promise.all(txs)
+
+//         let txsToWait = sentTxs.map(tx => tx.wait())
+
+//         const results = await Promise.allSettled(txsToWait)
+
+//         success += (results.filter(res => res.status === "fulfilled")).length
+//         fail += (results.filter(res => res.status === "rejected")).length
+
+//         let mssg = fail ?
+//         `Subscribed ${ success } / ${ botSubStatus.nonSubs }, failed ${ fail }`
+//         :
+//         `Subscribed ${ success } / ${ botSubStatus.nonSubs }`
+
+//         dispatch({ message: mssg })
         
-        if(!subscribing.status) {
-          await getSubCount({ faucet })
-          await getBalances({ provider, base, free, fmn })
-        }
-      } else {
-        subBot.current = 0
-        clearInterval(subscribingInterval)
-        dispatchSubscribing({ status: false })
-      }
-    }, 15000)
-  }
+//         if(!subscribing.status) {
+//           await getSubCount({ faucet })
+//           await getBalances({ provider, base, free, fmn })
+//         }
+//       } else {
+//         subBot.current = 0
+//         clearInterval(subscribingInterval)
+//         dispatchSubscribing({ status: false })
+//       }
+//     }, 15000)
+//   }
 
 
 
 
-  const start = async () => {
-    const { provider, base, faucet, free, fmn } = providers()
-    let currentGasPrice = gasPrice.toString()
-    let nextClaim = Date.now() + WAIT_TIME
-    dispatchTime({ nextClaim: nextClaim })
+//   const start = async () => {
+//     const { provider, base, faucet, free, fmn } = providers()
+//     let currentGasPrice = gasPrice.toString()
+//     let nextClaim = Date.now() + WAIT_TIME
+//     dispatchTime({ nextClaim: nextClaim })
 
-    let txCount = await provider.getTransactionCount(base.address)
+//     let txCount = await provider.getTransactionCount(base.address)
 
-    let success = 0
-    let fail = 0
-    let totalLoad = []
+//     let success = 0
+//     let fail = 0
+//     let totalLoad = []
 
-    for(let i = 0; i < botSubStatus.subs; i++) {
-      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
-      totalLoad.push(current.address)
-    }
+//     for(let i = 0; i < botSubStatus.subs; i++) {
+//       let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${i}`)
+//       totalLoad.push(current.address)
+//     }
 
-    const claimingInterval = setInterval(async () => {
-      if(running && currentBot.current < botSubStatus.subs) {
-        let max = CLAIMS_PER_BLOCK < botSubStatus.subs ? CLAIMS_PER_BLOCK : botSubStatus.subs
+//     const claimingInterval = setInterval(async () => {
+//       if(running && currentBot.current < botSubStatus.subs) {
+//         let max = CLAIMS_PER_BLOCK < botSubStatus.subs ? CLAIMS_PER_BLOCK : botSubStatus.subs
 
-        let currentTxCount = txCount
-        txCount += max
-        let startValue = currentBot.current
-        let maxIteration = currentBot.current + max
-        currentBot.current += max
+//         let currentTxCount = txCount
+//         txCount += max
+//         let startValue = currentBot.current
+//         let maxIteration = currentBot.current + max
+//         currentBot.current += max
 
-        let nextLoad = totalLoad.slice(startValue, maxIteration)
+//         let nextLoad = totalLoad.slice(startValue, maxIteration)
 
-        let txs = []
+//         let txs = []
 
-        for(let j = 0; j < nextLoad.length; j++) {
-          txs.push(faucet.claim(nextLoad[j], { gasLimit: "1000000", gasPrice: currentGasPrice, nonce: currentTxCount + j }))
-        }
+//         for(let j = 0; j < nextLoad.length; j++) {
+//           txs.push(faucet.claim(nextLoad[j], { gasLimit: "1000000", gasPrice: currentGasPrice, nonce: currentTxCount + j }))
+//         }
 
-        let sentTxs = await Promise.all(txs)
+//         let sentTxs = await Promise.all(txs)
         
-        let txsToWait = sentTxs.map(tx => tx.wait())
+//         let txsToWait = sentTxs.map(tx => tx.wait())
 
-        const results = await Promise.allSettled(txsToWait)
+//         const results = await Promise.allSettled(txsToWait)
 
-        success += (results.filter(res => res.status === "fulfilled")).length
-        fail += (results.filter(res => res.status === "rejected")).length
+//         success += (results.filter(res => res.status === "fulfilled")).length
+//         fail += (results.filter(res => res.status === "rejected")).length
 
-        await getBalances({ provider, base, free, fmn })
+//         await getBalances({ provider, base, free, fmn })
 
-        let nextClaimDate = (new Date(nextClaim)).toISOString().replace("T", " ")
-        let mssg = fail ?
-        `Claimed for ${ success } / ${ botSubStatus.subs }, failed ${ fail }. Next claim at ${ nextClaimDate }`
-        :
-        `Claimed for ${ success } / ${ botSubStatus.subs }, Next claim at ${ nextClaimDate }`
+//         let nextClaimDate = (new Date(nextClaim)).toISOString().replace("T", " ")
+//         let mssg = fail ?
+//         `Claimed for ${ success } / ${ botSubStatus.subs }, failed ${ fail }. Next claim at ${ nextClaimDate }`
+//         :
+//         `Claimed for ${ success } / ${ botSubStatus.subs }, Next claim at ${ nextClaimDate }`
 
-        dispatch({ message: mssg })
+//         dispatch({ message: mssg })
         
-        if(currentBot.current === 0) {
-          await getBalances({ provider, base, free, fmn })
-          await getSubCount({ faucet })
-        }
-      } else {
-        currentBot.current = 0
-        clearInterval(claimingInterval)
-      }
-    }, 15000)
-  }
+//         if(currentBot.current === 0) {
+//           await getBalances({ provider, base, free, fmn })
+//           await getSubCount({ faucet })
+//         }
+//       } else {
+//         currentBot.current = 0
+//         clearInterval(claimingInterval)
+//       }
+//     }, 15000)
+//   }
 
 
 
 
-  return (
-    <MonitorContainer>
-      <Heading>
-        Balances
-      </Heading>
-      <Balances>
-        <Row>
-          <Value symbol={true}>
-            FSN
-          </Value>
-          <Value>
-            { balances.fsn }
-          </Value>
-        </Row>
-        <Row>
-          <Value symbol={true}>
-            FREE
-          </Value>
-          <Value>
-            { balances.free }
-          </Value>
-        </Row>
-        <Row>
-          <Value symbol={true}>
-            FMN
-          </Value>
-          <Value>
-            { balances.fmn }
-          </Value>
-        </Row>
-      </Balances>
-      <Heading>
-        My Bot Army
-      </Heading>
-      <Body>
-        <SubHeading>
-          Base Address
-        </SubHeading>
-        <BodyValue>
-          { balances.base }
-        </BodyValue>
-        <SubHeading>
-          Total Bots
-        </SubHeading>
-        <BodyValue>
-          { botSubStatus.total }
-        </BodyValue>
-        <SubHeading>
-          Subscribed Bots
-        </SubHeading>
-        <BodyValue>
-          { botSubStatus.subs }
-        </BodyValue>
-        <Action active={ subscribeActive } onClick={() => subscribeActive ? subscribeAll() : ""}>
-          Subscribe All
-        </Action>
-      </Body>
-      <Heading>
-        Gas Price (gwei)
-      </Heading>
-      <Input type="number" min="1" defaultValue={ ONE.toNumber() } onChange={e => {
-        if(!subscribing.status && !running) {
-          dispatchGas(new BigNumber(e.target.value).multipliedBy(ONE_BILLION))
-        }
-      }}/>
-      <Heading>
-        Start/Stop Claiming
-      </Heading>
-      <Body>
-        <Row>
-          <StartStop active={ control.active } onClick={() => {
-            if(botSubStatus.total === WAIT_MESSAGE) dispatch({ message: `Please wait for subscriptions to load.`})
-            else if(subscribing.status) dispatch({ message: `Subscribing bots, please wait.` })
-            else if(botSubStatus.total !== botSubStatus.subs) {
-              dispatch({ message: `Make sure all your bots are subscribed, and wait for "Subscribed Bots" to update.`})
-            } else if(control.active && control.play && !subscribing.status && (botSubStatus.total === botSubStatus.subs) && botSubStatus.total !== WAIT_MESSAGE) {
-              setRunning(true)
-            } else if(control.active && !control.play && !subscribing.status) {
-              setRunning(false)
-            }
-          }}>
-            { control.active && !control.play ? <FaStop size={ 25 }/> : <FaPlay size={ 25 }/> }
-          </StartStop>
-        </Row>
-      </Body>
-      <MonitorAction>
-        { monitor.message }
-      </MonitorAction>
-      <Footer/>
-    </MonitorContainer>
-  )
-}
+//   return (
+//     <MonitorContainer>
+//       <Heading>
+//         Balances
+//       </Heading>
+//       <Balances>
+//         <Row>
+//           <Value symbol={true}>
+//             FSN
+//           </Value>
+//           <Value>
+//             { balances.fsn }
+//           </Value>
+//         </Row>
+//         <Row>
+//           <Value symbol={true}>
+//             FREE
+//           </Value>
+//           <Value>
+//             { balances.free }
+//           </Value>
+//         </Row>
+//         <Row>
+//           <Value symbol={true}>
+//             FMN
+//           </Value>
+//           <Value>
+//             { balances.fmn }
+//           </Value>
+//         </Row>
+//       </Balances>
+//       <Heading>
+//         My Bot Army
+//       </Heading>
+//       <Body>
+//         <SubHeading>
+//           Base Address
+//         </SubHeading>
+//         <BodyValue>
+//           { balances.base }
+//         </BodyValue>
+//         <SubHeading>
+//           Total Bots
+//         </SubHeading>
+//         <BodyValue>
+//           { botSubStatus.total }
+//         </BodyValue>
+//         <SubHeading>
+//           Subscribed Bots
+//         </SubHeading>
+//         <BodyValue>
+//           { botSubStatus.subs }
+//         </BodyValue>
+//         <Action active={ subscribeActive } onClick={() => subscribeActive ? subscribeAll() : ""}>
+//           Subscribe All
+//         </Action>
+//       </Body>
+//       <Heading>
+//         Gas Price (gwei)
+//       </Heading>
+//       <Input type="number" min="1" defaultValue={ ONE.toNumber() } onChange={e => {
+//         if(!subscribing.status && !running) {
+//           dispatchGas(new BigNumber(e.target.value).multipliedBy(ONE_BILLION))
+//         }
+//       }}/>
+//       <Heading>
+//         Start/Stop Claiming
+//       </Heading>
+//       <Body>
+//         <Row>
+//           <StartStop active={ control.active } onClick={() => {
+//             if(botSubStatus.total === WAIT_MESSAGE) dispatch({ message: `Please wait for subscriptions to load.`})
+//             else if(subscribing.status) dispatch({ message: `Subscribing bots, please wait.` })
+//             else if(botSubStatus.total !== botSubStatus.subs) {
+//               dispatch({ message: `Make sure all your bots are subscribed, and wait for "Subscribed Bots" to update.`})
+//             } else if(control.active && control.play && !subscribing.status && (botSubStatus.total === botSubStatus.subs) && botSubStatus.total !== WAIT_MESSAGE) {
+//               setRunning(true)
+//             } else if(control.active && !control.play && !subscribing.status) {
+//               setRunning(false)
+//             }
+//           }}>
+//             { control.active && !control.play ? <FaStop size={ 25 }/> : <FaPlay size={ 25 }/> }
+//           </StartStop>
+//         </Row>
+//       </Body>
+//       <MonitorAction>
+//         { monitor.message }
+//       </MonitorAction>
+//       <Footer/>
+//     </MonitorContainer>
+//   )
+// }

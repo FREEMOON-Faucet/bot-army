@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer, useCallback, useMemo } from "react"
+import { useState, useReducer, useCallback } from "react"
 import styled from "styled-components"
 import { ethers } from "ethers"
 import { FaStop, FaPlay } from "react-icons/fa"
@@ -78,21 +78,6 @@ const BodyValue = styled.div`
   text-align: center;
 `
 
-const Action = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 98%;
-  max-width: 490px;
-  height: 50px;
-  margin: 5px 0;
-  border-radius: 4px;
-  font-size: 1.2rem;
-  cursor: ${props => props.active ? "pointer" : "default"};
-  background: ${props => props.active ? "rgb(146, 180, 227)" : "#ddd"};
-  box-shadow: ${props => props.active ? "0px 4px 12px #ccc" : "0"};
-`
-
 const StartStop = styled.div`
   display: flex;
   justify-content: center;
@@ -107,7 +92,7 @@ const StartStop = styled.div`
   box-shadow: ${props => props.active ? "0px 4px 12px #ccc" : "0"};
 `
 
-const MonitorAction = styled.div`
+const Monitor = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -143,27 +128,39 @@ const Input = styled.input`
 `
 
 
-export default function Claim({ connection, count }) {
+export default function Claim({ connection, account }) {
 
-  const WAIT_TIME = 1000 * (3600 + 60)  // 61 minutes, to milliseconds
-
-  const ZERO = new BigNumber("0")
-  const ONE = new BigNumber("1")
-  const ONE_BILLION = new BigNumber("1000000000")
+  const WAIT_TIME = new BigNumber(1000 * (3600 + 60))  // 61 minutes, to milliseconds
 
 
   const [ balances, setBalances ] = useState({
-    base: "Please Wait ...",
-    fsn: ZERO,
-    free: ZERO,
-    fmn: ZERO
+    base: account.balances.base,
+    fsn: account.balances.fsn,
+    free: account.balances.free,
+    fmn: account.balances.fmn
   })
-  const [ subscriptions, setSubscriptions ] = useState("Please Wait ...")
+  const [ monitor, setMonitor ] = useState("-")
+
 
 
   const [ gas, dispatchGas ] = useReducer((state, gwei) => {
-    return new BigNumber(gwei).multipliedBy(ONE_BILLION)
-  }, ONE)
+    if(gwei < 1) return "1"
+    else return String(gwei)
+  }, "1")
+
+  const [ claimActive, dispatchClaimActive ] = useReducer((state, action) => {
+    if(state.active && state.play) {
+      return { active: true, play: false }
+    } else if(state.active && !state.play) {
+      return { active: true, play: true }
+    } else {
+      console.log("other")
+    }
+  }, { active: true, play: true })
+
+  const [ nextTime, dispatchNextTime ] = useReducer((state, time) => {
+    return time
+  }, Date.now())
 
 
 
@@ -211,54 +208,96 @@ export default function Claim({ connection, count }) {
   }, [])
 
 
-  const getSubscriptions = useCallback(async connected => {
-    const { faucet } = connected
+
+  const claim = async nextDate => {
+    const connected = connect()
+    const { provider, faucet } = connected
+
     const BATCH = 6 * 13
-    const totalRequests = count
+    const totalRequests = account.subscriptions
 
     let batches = []
     let requests = []
 
+    let txCount = await provider.getTransactionCount(account.balances.base)
+
+    // Starts at zero, stops after going through each request.
     for(let i = 0; i < totalRequests; i++) {
+      // Derive current address, build tx ...
+      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${ i }`)
+      requests.push(faucet.claim(current.address, {
+        from: account.balances.base,
+        gasLimit: "1000000",
+        gasPrice: ethers.utils.parseUnits(gas, "gwei"),
+        nonce: txCount + i
+      }))
+
+      // If a batch has been filled OR it is the last request to be made, add it to batches and reset current requests ...
       if(requests.length === BATCH || i === totalRequests - 1) {
         batches.push(requests)
         requests = []
       }
-      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${ i }`)
-      requests.push(faucet.isSubscribed(current.address))
     }
 
-    console.log(`
-      Batches: ${ batches }
-    `)
-
-    let subCount = 0
+    let success = 0, fail = 0
     let currentBatch = 0
 
-    const checkSubscribersInterval = setInterval(async () => {
+    const claimInterval = setInterval(async () => {
+      // If there are batches not yet confirmed, do so ...
       if(currentBatch < batches.length) {
         let check = currentBatch
         currentBatch++
-        let results = await Promise.all(batches[check])
-        subCount += (results.filter(res => res === true)).length
 
-        if(currentBatch === batches.length) setSubscriptions(subCount)
+        // Wait for the tx's to confirm ...
+        let results = await Promise.allSettled(batches[ check ])
+
+        // Tally fulfilled and rejected tx's ...
+        success += results.filter(res => res.status === "fulfilled").length
+        fail += results.filter(res => res.status === "rejected").length
+
+        if(currentBatch === batches.length) {
+          let mssg = fail > 0 ?
+            `Claim success for ${ success }, failed ${ fail }. Next claim at ${ nextDate}`
+              :
+            `Claim success for ${ success }. Next claim at ${ nextDate }`
+
+          setMonitor(mssg)
+          const connected = connect()
+          await getBalances(connected)
+        }
+      // Clear the interval if the batches are all confirmed.
       } else {
-        clearInterval(checkSubscribersInterval)
+        clearInterval(claimInterval)
       }
     }, 15000)
-  }, [ connection, count ])
+  }
 
 
+  const startClaiming = async () => {
+    dispatchClaimActive()
 
-  useEffect(() => {
-    const connected = connect()
-    if(balances.base === "Please Wait ...") {
-      getBalances(connected)
-    } else if(subscriptions === "Please Wait ...") {
-      getSubscriptions(connected)
+    const singleClaim = async () => {
+      let claimStartTime = Date.now()
+      let nextClaimTime = WAIT_TIME.plus(claimStartTime).toNumber()
+      dispatchNextTime(nextClaimTime)
+      let nextClaimDate = (new Date(nextClaimTime)).toISOString().replace("T", " ")
+      if(claimActive.play) {
+        setMonitor(`Claiming for ${ account.subscriptions } bots.`)
+        await claim(nextClaimDate)
+      } else {
+        clearInterval(hourlyClaimInterval)
+        setMonitor(`Claiming stopped.`)
+      }
     }
-  }, [ connect, getSubscriptions, getBalances, balances, subscriptions ])
+
+    const START_TIME = new BigNumber(Date.now())
+
+    if(START_TIME.isGreaterThanOrEqualTo(nextTime)) {
+      await singleClaim()
+    }
+
+    const hourlyClaimInterval = setInterval(singleClaim, WAIT_TIME)
+  }
 
 
 
@@ -294,6 +333,12 @@ export default function Claim({ connection, count }) {
         </Row>
       </Balances>
       <Heading>
+        Gas Price (gwei)
+      </Heading>
+      <Input type="number" min="1" defaultValue={ gas } onChange={e => {
+        dispatchGas(e.target.value)
+      }}/>
+      <Heading>
         My Bot Army
       </Heading>
       <Body>
@@ -301,41 +346,32 @@ export default function Claim({ connection, count }) {
           Base Address
         </SubHeading>
         <BodyValue>
-          { balances.base }
-        </BodyValue>
-        <SubHeading>
-          Total Bots
-        </SubHeading>
-        <BodyValue>
-          { count }
+          { account.balances.base }
         </BodyValue>
         <SubHeading>
           Subscribed Bots
         </SubHeading>
         <BodyValue>
-          { subscriptions }
+          { account.subscriptions }
         </BodyValue>
-        <Action>
-          Subscribe All
-        </Action>
       </Body>
-      <Heading>
-        Gas Price (gwei)
-      </Heading>
-      <Input type="number" min="1" defaultValue={ gas.toNumber() } onChange={e => {
-        dispatchGas(e.target.value)
-      }}/>
       <Heading>
         Start/Stop Claiming
       </Heading>
       <Body>
         <Row>
-          <StartStop>
+          <StartStop active={ claimActive.active } onClick={() => {
+            if(claimActive.active) {
+              startClaiming()
+            }
+          }}>
+            { claimActive.play ? <FaPlay size={ 25 }/> : <FaStop size={ 25 }/> }
           </StartStop>
         </Row>
       </Body>
-      <MonitorAction>
-      </MonitorAction>
+      <Monitor>
+        { monitor }
+      </Monitor>
       <Footer/>
     </MonitorContainer>
   )

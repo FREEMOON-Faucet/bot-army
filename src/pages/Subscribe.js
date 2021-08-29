@@ -124,7 +124,7 @@ const Input = styled.input`
 `
 
 
-export default function Subscribe({ connection, count, setSubscribed }) {
+export default function Subscribe({ connection, count, setAccount }) {
 
   const ZERO = new BigNumber("0")
 
@@ -381,7 +381,7 @@ export default function Subscribe({ connection, count, setSubscribed }) {
           { subMessage }
         </Action>
       </Body>
-        <Button active={ continueActive } onClick={ () => continueActive ? setSubscribed(subscriptions) : "" }>
+        <Button active={ continueActive } onClick={ () => continueActive ? setAccount({ subscriptions, balances }) : "" }>
           Continue
         </Button>
     </MonitorContainer>

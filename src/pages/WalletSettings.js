@@ -123,26 +123,13 @@ export default function WalletSettings({ generateWallet }) {
     address: "",
     privateKey: ""
   })
-  const [ provider, setProvider ] = useState("https://testway.freemoon.xyz/gate")
+  const [ provider, setProvider ] = useState("https://mainway.freemoon.xyz/gate")
 
 
   const [ words, dispatch ] = useReducer((state, action) => {
     state[action.index] = action.value
     return state
-  }, [
-    "response",
-    "gravity",
-    "obscure",
-    "only",
-    "frown",
-    "seek",
-    "cruel",
-    "modify",
-    "north",
-    "clever",
-    "draft",
-    "pause"
-  ])
+  }, [])
 
 
   const displayPhraseInputs = () => {

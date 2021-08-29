@@ -47,15 +47,15 @@ function App() {
   const [ tab, setTab ] = useState(0)
   const [ connection, setConnection ] = useState(null)
   const [ count, setCount ] = useState(0)
-  const [ subscribed, setSubscribed ] = useState(0)
+  const [ account, setAccount ] = useState(null)
 
 
   useEffect(() => {
     if(connection && !count) setTab(1)
-    else if(connection && count && !subscribed) setTab(2) 
-    else if(connection && count && subscribed) setTab(3)
+    else if(connection && count && !account) setTab(2) 
+    else if(connection && count && account) setTab(3)
     else setTab(0)
-  }, [ connection, count, subscribed ])
+  }, [ connection, count, account ])
 
 
   const generateWallet = async wallet => {
@@ -78,11 +78,11 @@ function App() {
       )
     } else if(tab === 2) {
       return (
-        <Subscribe connection={ connection } count={ count } setSubscribed={ setSubscribed }/>
+        <Subscribe connection={ connection } count={ count } setAccount={ setAccount }/>
       )
     } else if(tab === 3) {
       return (
-        <Claim connection={ connection } subscribed={ subscribed }/>
+        <Claim connection={ connection } account={ account }/>
       )
     }
   }
