@@ -59,9 +59,9 @@ export default function BotCount({ setCount }) {
         Number of Bots
       </Heading>
       <Input type="number" min="1" defaultValue={ countValue } onChange={ e => setCountValue(e.target.value) }/>
-      <Action onClick={ () => setCount(countValue) }>
+      <Action onClick={ () => countValue > 0 ? setCount(countValue) : ""}>
         Confirm
-      </Action> 
+      </Action>
     </GasContainer>
   )
 }

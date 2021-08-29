@@ -129,7 +129,20 @@ export default function WalletSettings({ generateWallet }) {
   const [ words, dispatch ] = useReducer((state, action) => {
     state[action.index] = action.value
     return state
-  }, [])
+  }, [
+    "test",
+    "test",
+    "test",
+    "test",
+    "test",
+    "test",
+    "test",
+    "test",
+    "test",
+    "test",
+    "test",
+    "junk"
+  ])
 
 
   const displayPhraseInputs = () => {

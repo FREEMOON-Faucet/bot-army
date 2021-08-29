@@ -5,7 +5,9 @@ import GlobalStyle from "./globalStyle"
 import fmn from "./icons/android-chrome-512x512.png"
 import WalletSettings from "./pages/WalletSettings"
 import BotCount from "./pages/BotCount"
+import Subscribe from "./pages/Subscribe"
 import Monitor from "./pages/Monitor"
+import Claim from "./pages/Claim"
 
 
 const Container = styled.div`
@@ -46,13 +48,15 @@ function App() {
   const [ tab, setTab ] = useState(0)
   const [ connection, setConnection ] = useState(null)
   const [ count, setCount ] = useState(0)
+  const [ subscribed, setSubscribed ] = useState(0)
 
 
   useEffect(() => {
     if(connection && !count) setTab(1)
-    else if(connection && count) setTab(2) 
+    else if(connection && count && !subscribed) setTab(2) 
+    else if(connection && count && subscribed) setTab(3)
     else setTab(0)
-  }, [ connection, count ])
+  }, [ connection, count, subscribed ])
 
 
   const generateWallet = async wallet => {
@@ -75,7 +79,11 @@ function App() {
       )
     } else if(tab === 2) {
       return (
-        <Monitor connection={ connection } count={ count }/>
+        <Subscribe connection={ connection } count={ count } setSubscribed={ setSubscribed }/>
+      )
+    } else if(tab === 3) {
+      return (
+        <Claim connection={ connection } subscribed={ subscribed }/>
       )
     }
   }
