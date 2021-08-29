@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer, useCallback, useMemo } from "react"
+import { useState, useEffect, useReducer, useCallback } from "react"
 import styled from "styled-components"
 import { ethers } from "ethers"
 import BigNumber from "bignumber.js"
@@ -126,10 +126,7 @@ const Input = styled.input`
 
 export default function Subscribe({ connection, count, setSubscribed }) {
 
-  const WAIT_TIME = 1000 * (3600 + 60)  // 61 minutes, to milliseconds
-
   const ZERO = new BigNumber("0")
-  const ONE = new BigNumber("1")
 
 
   const [ balances, setBalances ] = useState({
@@ -146,9 +143,9 @@ export default function Subscribe({ connection, count, setSubscribed }) {
 
 
   const [ gas, dispatchGas ] = useReducer((state, gwei) => {
-    if(gwei < 1) return 1
-    else return gwei
-  }, 1)
+    if(gwei < 1) return "1"
+    else return String(gwei)
+  }, "1")
 
 
 
@@ -206,12 +203,12 @@ export default function Subscribe({ connection, count, setSubscribed }) {
     let requests = []
 
     for(let i = 0; i < totalRequests; i++) {
+      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${ i }`)
+      requests.push(faucet.isSubscribed(current.address))
       if(requests.length === BATCH || i === totalRequests - 1) {
         batches.push(requests)
         requests = []
       }
-      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${ i }`)
-      requests.push(faucet.isSubscribed(current.address))
     }
 
     let subscribedAccounts = 0
@@ -226,9 +223,6 @@ export default function Subscribe({ connection, count, setSubscribed }) {
 
         if(currentBatch === batches.length) {
           setSubscriptions(subscribedAccounts)
-          if(count - subscribedAccounts > 0) {
-            setSubscribeActive(true)
-          }
         }
       } else {
         clearInterval(checkSubscribersInterval)
@@ -259,41 +253,49 @@ export default function Subscribe({ connection, count, setSubscribed }) {
 
     let txCount = await provider.getTransactionCount(base.address)
 
-    for(let i = subscriptions; i < totalRequests; i++) {
-      if(requests.length === BATCH || i === totalRequests - 1) {
-        batches.push(requests)
-        requests = []
-      }
-      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${ i }`)
+    // Starts at zero, stops after going through each request.
+    for(let i = 0; i < totalRequests; i++) {
+      // Derive current address, build tx ...
+      let current = ethers.Wallet.fromMnemonic(connection.phrase, `m/44'/60'/0'/0/${ subscriptions + i }`)
       requests.push(faucet.subscribe(current.address, {
         from: base.address,
+        gasLimit: "1000000",
         gasPrice: ethers.utils.parseUnits(gas, "gwei"),
         value: ethers.utils.parseUnits("1.0", 18),
         nonce: txCount + i
       }))
+
+      // If a batch has been filled OR it is the last request to be made, add it to batches and reset current requests ...
+      if(requests.length === BATCH || i === totalRequests - 1) {
+        batches.push(requests)
+        requests = []
+      }
     }
 
     let success = 0, fail = 0
     let currentBatch = 0
 
     const subscribeInterval = setInterval(async () => {
+      // If there are batches not yet confirmed, do so ...
       if(currentBatch < batches.length) {
         let check = currentBatch
         currentBatch++
-        let results = await Promise.allResolved(batches[ check ])
 
-        success += results.filter(res => res.status === "resolved").length
+        // Wait for the tx's to confirm ...
+        let results = await Promise.allSettled(batches[ check ])
+
+        // Tally fulfilled and rejected tx's ...
+        success += results.filter(res => res.status === "fulfilled").length
         fail += results.filter(res => res.status === "rejected").length
 
         if(currentBatch === batches.length) {
-          console.log(`
-            Succeeded subscribing ${ success },
-            Failed subscribing ${ fail }
-          `)
-          setSubMessage(`Subscribed ${ success }, failed ${ fail }.`)
-          if(fail > 0) setSubscribeActive(true)
-          if(fail === 0) setContinueActive(true)
+          let mssg = fail > 0 ? `Subscribed ${ success }, failed ${ fail }.` : `Subscribed ${ success }.`
+          setSubMessage(mssg)
+          const connected = connect()
+          getBalances(connected)
+          await getSubscriptions(connected)
         }
+      // Clear the interval if the batches are all confirmed.
       } else {
         clearInterval(subscribeInterval)
       }
@@ -306,14 +308,13 @@ export default function Subscribe({ connection, count, setSubscribed }) {
     const connected = connect()
     getBalances(connected)
     getSubscriptions(connected)
-  }, [ connect, getSubscriptions, getBalances ])
+  }, [ connect, getBalances, getSubscriptions ])
 
 
   useEffect(() => {
-    if(count - subscriptions.subscribed > 0) {
-      setSubscribeActive(true)
-    }
-  }, [ count, subscriptions ])
+    if(subscriptions < count) setSubscribeActive(true)
+    else if(Number(subscriptions) === Number(count)) setContinueActive(true)
+  }, [ subscriptions, count ])
 
 
 
@@ -351,7 +352,7 @@ export default function Subscribe({ connection, count, setSubscribed }) {
       <Heading>
         Gas Price (gwei)
       </Heading>
-      <Input type="number" min="1" defaultValue={ gas } onChange={e => {
+      <Input type="number" min="1" defaultValue={ Number(gas) } onChange={e => {
         dispatchGas(e.target.value)
       }}/>
       <Heading>
@@ -380,7 +381,7 @@ export default function Subscribe({ connection, count, setSubscribed }) {
           { subMessage }
         </Action>
       </Body>
-        <Button active={ false } onClick={ () => continueActive ? setSubscribed(count) : "" }>
+        <Button active={ continueActive } onClick={ () => continueActive ? setSubscribed(subscriptions) : "" }>
           Continue
         </Button>
     </MonitorContainer>

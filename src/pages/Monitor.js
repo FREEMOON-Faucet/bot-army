@@ -335,7 +335,7 @@ export default function Monitor({ connection, count }) {
 
   const subscribeAll = async () => {
     setSubscribeActive(false)
-    dispatch({ message: `Subscribing ${botSubStatus.nonSubs} ...` })
+    dispatch({ message: `Subscribing ${ botSubStatus.nonSubs} ...` })
     dispatchSubscribing({ status: true })
     const { base, provider, faucet, free, fmn } = providers()
     const currentGasPrice = gasPrice.toString()

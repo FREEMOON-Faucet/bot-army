@@ -6,7 +6,6 @@ import fmn from "./icons/android-chrome-512x512.png"
 import WalletSettings from "./pages/WalletSettings"
 import BotCount from "./pages/BotCount"
 import Subscribe from "./pages/Subscribe"
-import Monitor from "./pages/Monitor"
 import Claim from "./pages/Claim"
 
 
